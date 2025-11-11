@@ -1,50 +1,68 @@
 // pages/Register.jsx
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import Alert from '../components/Alert';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { UserPlus } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import Alert from "../components/Alert";
 
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'Patient',
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "Client",
+    phoneNumber: null,
+    validation: {
+      IdentificationNumber: "",
+    },
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const roles = [
-    { value: 'Patient', label: 'Paciente' },
-    { value: 'Doctor', label: 'Doctor' },
-    { value: 'Nurse', label: 'Enfermero/a' },
-    { value: 'MedicalStaff', label: 'Personal Médico' },
+    { value: "Client", label: "Cliente" },
+    { value: "Patient", label: "Paciente" },
+    { value: "Doctor", label: "Doctor" },
+    { value: "Nurse", label: "Enfermero/a" },
+    { value: "MedicalStaff", label: "Personal Médico" },
   ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    if (name === "IdentificationNumber") {
+      // Si el 'name' es IdentificationNumber, actualiza el objeto anidado 'validation'
+      setFormData((prev) => ({
+        ...prev,
+        validation: {
+          ...prev.validation,
+          IdentificationNumber: value,
+        },
+      }));
+    } else {
+      // Para todos los demás campos de nivel superior (email, password, role, etc.)
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const validateForm = () => {
     if (!formData.email) {
-      setError('El email es requerido');
+      setError("El email es requerido");
       return false;
     }
 
     if (formData.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError("La contraseña debe tener al menos 6 caracteres");
       return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError("Las contraseñas no coinciden");
       return false;
     }
 
@@ -54,7 +72,17 @@ const Register = () => {
     const hasNumber = /[0-9]/.test(formData.password);
 
     if (!hasUpperCase || !hasLowerCase || !hasNumber) {
-      setError('La contraseña debe contener mayúsculas, minúsculas y números');
+      setError("La contraseña debe contener mayúsculas, minúsculas y números");
+      return false;
+    }
+
+    if (
+      formData.role !== "Client" &&
+      !formData.validation.IdentificationNumber
+    ) {
+      setError(
+        "El número de identificación es requerido para el rol seleccionado"
+      );
       return false;
     }
 
@@ -63,7 +91,7 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!validateForm()) {
       return;
@@ -75,11 +103,16 @@ const Register = () => {
       await register({
         email: formData.email,
         password: formData.password,
-        role: formData.role,
+        confirmPassword: formData.confirmPassword,
+        phoneNumber: formData.phoneNumber,
+        roles: [formData.role],
+        validationData: formData.validation,
       });
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err) {
-      setError(err.message || 'Error al registrar usuario. Intenta nuevamente.');
+      setError(
+        err.message || "Error al registrar usuario. Intenta nuevamente."
+      );
     } finally {
       setLoading(false);
     }
@@ -98,12 +131,17 @@ const Register = () => {
         </div>
 
         {/* Alert */}
-        {error && <Alert type="error" message={error} onClose={() => setError('')} />}
+        {error && (
+          <Alert type="error" message={error} onClose={() => setError("")} />
+        )}
 
         {/* Form */}
         <div className="space-y-5">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Email
             </label>
             <input
@@ -120,7 +158,10 @@ const Register = () => {
           </div>
 
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="role"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Rol
             </label>
             <select
@@ -137,9 +178,32 @@ const Register = () => {
               ))}
             </select>
           </div>
+          {formData.role !== "Client" && (
+            <div>
+              <label
+                htmlFor="identification"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Número de Identificación
+              </label>
+              <input
+                id="identification"
+                name="IdentificationNumber"
+                type="text"
+                required
+                value={formData.validation.IdentificationNumber}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                placeholder="Ingresa tu número de identificación"
+              />
+            </div>
+          )}
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Contraseña
             </label>
             <input
@@ -159,7 +223,10 @@ const Register = () => {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Confirmar Contraseña
             </label>
             <input
@@ -181,15 +248,18 @@ const Register = () => {
             className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <UserPlus className="w-5 h-5" />
-            {loading ? 'Registrando...' : 'Crear Cuenta'}
+            {loading ? "Registrando..." : "Crear Cuenta"}
           </button>
         </div>
 
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-gray-600">
-            ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-purple-600 font-medium hover:underline">
+            ¿Ya tienes cuenta?{" "}
+            <Link
+              to="/login"
+              className="text-purple-600 font-medium hover:underline"
+            >
               Inicia sesión
             </Link>
           </p>
