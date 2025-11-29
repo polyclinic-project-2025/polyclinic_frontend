@@ -12,7 +12,7 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "Client",
+    role: "Patient",
     phoneNumber: null,
     validation: {
       IdentificationNumber: "",
@@ -22,7 +22,6 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
 
   const roles = [
-    { value: "Client", label: "Cliente" },
     { value: "Patient", label: "Paciente" },
     { value: "Doctor", label: "Doctor" },
     { value: "Nurse", label: "Enfermero/a" },
@@ -77,7 +76,6 @@ const Register = () => {
     }
 
     if (
-      formData.role !== "Client" &&
       !formData.validation.IdentificationNumber
     ) {
       setError(
@@ -136,7 +134,7 @@ const Register = () => {
         )}
 
         {/* Form */}
-        <div className="space-y-5">
+        <div>
           <div>
             <label
               htmlFor="email"
@@ -178,26 +176,25 @@ const Register = () => {
               ))}
             </select>
           </div>
-          {formData.role !== "Client" && (
-            <div>
-              <label
-                htmlFor="identification"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Número de Identificación
-              </label>
-              <input
-                id="identification"
-                name="IdentificationNumber"
-                type="text"
-                required
-                value={formData.validation.IdentificationNumber}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
-                placeholder="Ingresa tu número de identificación"
-              />
-            </div>
-          )}
+
+          <div>
+            <label
+              htmlFor="identification"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Número de Identificación
+            </label>
+            <input
+              id="identification"
+              name="IdentificationNumber"
+              type="text"
+              required
+              value={formData.validation.IdentificationNumber}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+              placeholder="Ingresa tu número de identificación"
+            />
+          </div>
 
           <div>
             <label
