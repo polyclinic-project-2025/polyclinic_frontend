@@ -1,33 +1,25 @@
-// pages/Departments.jsx
+// pages/Departments.jsx (CON MIDDLEWARE DE PERMISOS)
 import React, { useState, useEffect } from 'react';
 import {
-  Building2,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  X,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
+  Building2, Plus, Edit, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2,
 } from 'lucide-react';
 import { departmentService } from '../services/departmentService';
 import { useAuth } from '../context/AuthContext';
+import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
 
 const Departments = () => {
   const { hasRole } = useAuth();
+  const { can, isAdmin } = usePermissions(); // ← Hook de permisos
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState('create'); // 'create' | 'edit'
+  const [modalMode, setModalMode] = useState('create');
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  const isAdmin = hasRole('Admin');
 
   useEffect(() => {
     loadDepartments();
@@ -46,6 +38,13 @@ const Departments = () => {
   };
 
   const handleCreate = () => {
+    // ← Validar permiso antes de abrir modal
+    if (!can('canCreateDepartments')) {
+      setError('No tienes permisos para crear departamentos');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     setModalMode('create');
     setFormData({ name: '', description: '' });
     setSelectedDepartment(null);
@@ -54,6 +53,13 @@ const Departments = () => {
   };
 
   const handleEdit = (department) => {
+    // ← Validar permiso antes de editar
+    if (!can('canEditDepartments')) {
+      setError('No tienes permisos para editar departamentos');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     setModalMode('edit');
     setFormData({
       name: department.name,
@@ -65,6 +71,13 @@ const Departments = () => {
   };
 
   const handleDelete = async (id, name) => {
+    // ← Validar permiso antes de eliminar
+    if (!can('canDeleteDepartments')) {
+      setError('No tienes permisos para eliminar departamentos');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     if (!window.confirm(`¿Estás seguro de eliminar el departamento "${name}"?`)) {
       return;
     }
@@ -130,7 +143,9 @@ const Departments = () => {
             Gestiona los departamentos de la policlínica
           </p>
         </div>
-        {isAdmin && (
+        
+        {/* ← BOTÓN PROTEGIDO: Solo visible si tiene permiso */}
+        <ProtectedComponent requiredPermission="canCreateDepartments">
           <button
             onClick={handleCreate}
             className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
@@ -138,7 +153,7 @@ const Departments = () => {
             <Plus className="w-5 h-5" />
             Nuevo Departamento
           </button>
-        )}
+        </ProtectedComponent>
       </div>
 
       {/* Search Bar */}
@@ -174,7 +189,8 @@ const Departments = () => {
         </div>
       )}
 
-      {!isAdmin && (
+      {/* ← ALERTA: Solo visible si NO es admin */}
+      {!isAdmin() && (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-3">
           <AlertCircle className="text-yellow-600 flex-shrink-0" />
           <p className="text-yellow-800">
@@ -201,8 +217,10 @@ const Departments = () => {
                   </h3>
                 </div>
               </div>
-              {isAdmin && (
-                <div className="flex gap-2">
+              
+              {/* ← BOTONES DE ACCIÓN PROTEGIDOS */}
+              <div className="flex gap-2">
+                <ProtectedComponent requiredPermission="canEditDepartments">
                   <button
                     onClick={() => handleEdit(department)}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
@@ -210,6 +228,9 @@ const Departments = () => {
                   >
                     <Edit className="w-4 h-4" />
                   </button>
+                </ProtectedComponent>
+                
+                <ProtectedComponent requiredPermission="canDeleteDepartments">
                   <button
                     onClick={() => handleDelete(department.id, department.name)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -217,8 +238,8 @@ const Departments = () => {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                </div>
-              )}
+                </ProtectedComponent>
+              </div>
             </div>
             {department.description && (
               <p className="text-gray-600 text-sm">{department.description}</p>

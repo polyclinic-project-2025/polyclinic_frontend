@@ -1,29 +1,18 @@
-// pages/Dashboard.jsx
+// pages/Dashboard.jsx (CON MIDDLEWARE DE PERMISOS)
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LogOut,
-  Activity,
-  Users,
-  Calendar,
-  FileText,
-  Bell,
-  Settings,
-  Pill,
-  AlertCircle,
-  Package,
-  Menu,
-  Home,
-  Building2,
-  Stethoscope,
-  BarChart3,
+  LogOut, Activity, Users, Calendar, Bell, Settings,
+  Pill, AlertCircle, Package, Menu, Home, Building2, Stethoscope, BarChart3,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { usePermissions, filterModulesByPermission } from "../middleware/PermissionMiddleware";
 import Departments from "./Departments";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { canAccess } = usePermissions(); // ← Hook de permisos
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeModule, setActiveModule] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -42,7 +31,6 @@ const Dashboard = () => {
     Admin: "Administrador",
   };
 
-  
   const slides = [
     {
       title: "Campaña de Vacunación 2025",
@@ -58,8 +46,7 @@ const Dashboard = () => {
     },
     {
       title: "Crisis Epidemiológica",
-      description:
-        "Alerta por Chikungunya, Dengue y Oropouche. Medidas preventivas y atención inmediata.",
+      description: "Alerta por Chikungunya, Dengue y Oropouche. Medidas preventivas.",
       color: "from-emerald-500 to-red-400",
       icon: "⚠️",
     },
@@ -78,7 +65,6 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  
   const date = new Date();
   const day = date.getDate();
   const month = date.getMonth() + 1;
@@ -93,7 +79,8 @@ const Dashboard = () => {
   };
   const dateFormatted = Format(day, month, year);
 
-  const modules = [
+  // Lista completa de módulos
+  const allModules = [
     { id: "dashboard", name: "Página Principal", icon: Home },
     { id: "patients", name: "Pacientes", icon: Users },
     { id: "consultations", name: "Consultas", icon: Calendar },
@@ -105,8 +92,25 @@ const Dashboard = () => {
     { id: "reports", name: "Reportes", icon: BarChart3 },
   ];
 
-  // Renderizar contenido según el módulo activo
+  // ← FILTRAR MÓDULOS SEGÚN PERMISOS DEL USUARIO
+  const modules = filterModulesByPermission(allModules, user?.roles || []);
+
   const renderContent = () => {
+    // ← VALIDAR ACCESO ANTES DE RENDERIZAR
+    if (!canAccess(activeModule)) {
+      return (
+        <div className="text-center py-12">
+          <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
+          <p className="text-red-600 text-lg font-semibold">
+            No tienes permisos para acceder a este módulo
+          </p>
+          <p className="text-gray-500 mt-2">
+            Contacta al administrador si necesitas acceso
+          </p>
+        </div>
+      );
+    }
+
     switch (activeModule) {
       case "departments":
         return <Departments />;
@@ -167,9 +171,7 @@ const Dashboard = () => {
               {slides.map((slide, idx) => (
                 <div
                   key={idx}
-                  className={`absolute inset-0 bg-gradient-to-r ${
-                    slide.color
-                  } transition-opacity duration-1000 ${
+                  className={`absolute inset-0 bg-gradient-to-r ${slide.color} transition-opacity duration-1000 ${
                     idx === currentSlide ? "opacity-100" : "opacity-0"
                   }`}
                 >
@@ -184,8 +186,6 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-
-            
           </>
         );
     }
@@ -211,9 +211,7 @@ const Dashboard = () => {
                     MatComCare Pro
                   </h1>
                 </div>
-                <p className="text-xs text-slate-500 ml-10">
-                  Policlínico Docente
-                </p>
+                <p className="text-xs text-slate-500 ml-10">Policlínico Docente</p>
               </div>
             )}
             <button
@@ -224,6 +222,8 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
+        
+        {/* ← RENDERIZAR SOLO MÓDULOS PERMITIDOS */}
         <nav className="p-4 space-y-1">
           {modules.map((module) => {
             const Icon = module.icon;
@@ -248,18 +248,14 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main
-        className={`${
-          sidebarOpen ? "ml-72" : "ml-20"
-        } transition-all duration-300`}
+        className={`${sidebarOpen ? "ml-72" : "ml-20"} transition-all duration-300`}
       >
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-40">
           <div className="px-8 py-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-slate-800">
-                  Sistema de Gestión
-                </h2>
+                <h2 className="text-3xl font-bold text-slate-800">Sistema de Gestión</h2>
                 <p className="text-slate-500">{dateFormatted}</p>
               </div>
 
@@ -274,14 +270,10 @@ const Dashboard = () => {
                 </button>
 
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900">
-                    {user?.email}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900">{user?.email}</p>
                   <p className="text-xs text-gray-500">
                     {user?.roles?.length > 0
-                      ? user.roles
-                          .map((role) => roleTranslations[role] || role)
-                          .join(", ")
+                      ? user.roles.map((role) => roleTranslations[role] || role).join(", ")
                       : "Usuario"}
                   </p>
                 </div>
