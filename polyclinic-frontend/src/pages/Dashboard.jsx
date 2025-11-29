@@ -103,6 +103,7 @@ const Dashboard = () => {
           <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
           <p className="text-red-600 text-lg font-semibold">
             No tienes permisos para acceder a este módulo
+            Roles: {user?.roles?.join(", ")}
           </p>
           <p className="text-gray-500 mt-2">
             Contacta al administrador si necesitas acceso
