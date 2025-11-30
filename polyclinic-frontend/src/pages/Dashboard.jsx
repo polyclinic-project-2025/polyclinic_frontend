@@ -1,6 +1,6 @@
-// pages/Dashboard.jsx (CON MIDDLEWARE DE PERMISOS)
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// pages/Dashboard.jsx (CON MIDDLEWARE DE PERMISOS + USERS)
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   LogOut, Activity, Users, Calendar, Bell, Settings,
   Pill, AlertCircle, Package, Menu, Home, Building2, Stethoscope, BarChart3,
@@ -8,14 +8,25 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { usePermissions, filterModulesByPermission } from "../middleware/PermissionMiddleware";
 import Departments from "./Departments";
+import UsersView from "./UsersView";
+import ModalSettings from "../components/ModalSettings";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
-  const { canAccess } = usePermissions(); // ← Hook de permisos
+  const { canAccess } = usePermissions();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeModule, setActiveModule] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showModalSettings, setShowModalSettings] = useState(false);
+
+  // Detectar navegación desde ModalSettings
+  useEffect(() => {
+    if (location.pathname === '/users') {
+      setActiveModule('users');
+    }
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -23,7 +34,6 @@ const Dashboard = () => {
   };
 
   const roleTranslations = {
-    Client: "Cliente",
     Patient: "Paciente",
     Doctor: "Doctor",
     Nurse: "Enfermero/a",
@@ -58,7 +68,7 @@ const Dashboard = () => {
     },
   ];
 
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 4000);
@@ -79,7 +89,6 @@ const Dashboard = () => {
   };
   const dateFormatted = Format(day, month, year);
 
-  // Lista completa de módulos
   const allModules = [
     { id: "dashboard", name: "Página Principal", icon: Home },
     { id: "patients", name: "Pacientes", icon: Users },
@@ -92,11 +101,9 @@ const Dashboard = () => {
     { id: "reports", name: "Reportes", icon: BarChart3 },
   ];
 
-  // ← FILTRAR MÓDULOS SEGÚN PERMISOS DEL USUARIO
   const modules = filterModulesByPermission(allModules, user?.roles || []);
 
   const renderContent = () => {
-    // ← VALIDAR ACCESO ANTES DE RENDERIZAR
     if (!canAccess(activeModule)) {
       return (
         <div className="text-center py-12">
@@ -113,6 +120,8 @@ const Dashboard = () => {
     }
 
     switch (activeModule) {
+      case "users":
+        return <UsersView />;
       case "departments":
         return <Departments />;
       case "patients":
@@ -198,7 +207,7 @@ const Dashboard = () => {
       <aside
         className={`fixed left-0 top-0 h-full ${
           sidebarOpen ? "w-72" : "w-20"
-        } bg-white/80 backdrop-blur-xl border-r border-slate-200/50 transition-all duration-300 z-50 shadow-xl`}
+        } bg-white/80 backdrop-blur-xl border-r border-slate-200/50 transition-all duration-300 z-30 shadow-xl`}
       >
         <div className="p-6 border-b border-slate-200/50">
           <div className="flex items-center justify-between">
@@ -224,7 +233,6 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* ← RENDERIZAR SOLO MÓDULOS PERMITIDOS */}
         <nav className="p-4 space-y-1">
           {modules.map((module) => {
             const Icon = module.icon;
@@ -252,7 +260,7 @@ const Dashboard = () => {
         className={`${sidebarOpen ? "ml-72" : "ml-20"} transition-all duration-300`}
       >
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-40">
+        <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-30">
           <div className="px-8 py-5">
             <div className="flex items-center justify-between">
               <div>
@@ -266,7 +274,8 @@ const Dashboard = () => {
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                 </button>
 
-                <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                <button onClick={() => setShowModalSettings(true)}
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
                   <Settings className="w-5 h-5" />
                 </button>
 
@@ -294,8 +303,24 @@ const Dashboard = () => {
         {/* Content Area */}
         <div className="p-8">{renderContent()}</div>
       </main>
+
+      {/* Modal Settings */}
+      {showModalSettings && (
+        <ModalSettings 
+          isOpen={showModalSettings} 
+          onClose={() => setShowModalSettings(false)}
+          onNavigateToModule={(moduleId) => setActiveModule(moduleId)}
+        />
+      )}
     </div>
   );
 };
 
 export default Dashboard;
+export const roleTranslations = {
+  Patient: "Paciente",
+  Doctor: "Doctor",
+  Nurse: "Enfermero/a",
+  MedicalStaff: "Personal Médico",
+  Admin: "Administrador",
+};

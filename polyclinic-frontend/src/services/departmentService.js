@@ -11,11 +11,8 @@ export const departmentService = {
       const response = await api.get('/Departments');
       return response.data;
     } catch (error) {
-      console.error('Error al obtener departamentos:', error);
-      throw new Error(
-        error.response?.data?.message || 
-        'Error al obtener departamentos'
-      );
+      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener departamentos';
+      throw new Error(errorMessage);
     }
   },
 
@@ -30,10 +27,8 @@ export const departmentService = {
       return response.data;
     } catch (error) {
       console.error('Error al obtener departamento:', error);
-      throw new Error(
-        error.response?.data?.message || 
-        'Error al obtener departamento'
-      );
+      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener departamento';
+      throw new Error(errorMessage);
     }
   },
 
@@ -48,18 +43,7 @@ export const departmentService = {
       return response.data;
     } catch (error) {
       console.error('Error al crear departamento:', error);
-      let errorMessage = 'Error al crear departamento';
-      
-      if (error.response?.data) {
-        if (typeof error.response.data === 'string') {
-          errorMessage = error.response.data;
-        } else if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        } else if (error.response.data.errors) {
-          errorMessage = Object.values(error.response.data.errors).flat().join(', ');
-        }
-      }
-      
+      const errorMessage = error.response?.data?.errorMessage || 'Error al crear departamento';
       throw new Error(errorMessage);
     }
   },
@@ -75,18 +59,7 @@ export const departmentService = {
       await api.put(`/Departments/${id}`, departmentData);
     } catch (error) {
       console.error('Error al actualizar departamento:', error);
-      let errorMessage = 'Error al actualizar departamento';
-      
-      if (error.response?.data) {
-        if (typeof error.response.data === 'string') {
-          errorMessage = error.response.data;
-        } else if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        } else if (error.response.data.errors) {
-          errorMessage = Object.values(error.response.data.errors).flat().join(', ');
-        }
-      }
-      
+      const errorMessage = error.response?.data?.errorMessage || 'Error al actualizar departamento';
       throw new Error(errorMessage);
     }
   },
@@ -100,11 +73,8 @@ export const departmentService = {
     try {
       await api.delete(`/Departments/${id}`);
     } catch (error) {
-      console.error('Error al eliminar departamento:', error);
-      throw new Error(
-        error.response?.data?.message || 
-        'Error al eliminar departamento'
-      );
+      const errorMessage = error.response?.data?.errorMessage || 'Error al eliminar departamento';
+      throw new Error(errorMessage);
     }
   },
 };

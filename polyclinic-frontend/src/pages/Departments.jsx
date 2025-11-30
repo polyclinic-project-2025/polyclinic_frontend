@@ -31,7 +31,9 @@ const Departments = () => {
       const data = await departmentService.getAll();
       setDepartments(data);
     } catch (err) {
-      setError(err.message);
+      const errorMessage = err.message || 'Error al cargar departamentos';
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -87,8 +89,9 @@ const Departments = () => {
       setSuccess('Departamento eliminado exitosamente');
       loadDepartments();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      const errorMessage = error.message || 'Error al eliminar departamento';
+      setError(errorMessage);
       setTimeout(() => setError(''), 5000);
     }
   };
@@ -111,7 +114,8 @@ const Departments = () => {
       loadDepartments();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.message);
+      const errorMessage = err.response?.data?.errorMessage || 'Error al guardar departamento';
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }

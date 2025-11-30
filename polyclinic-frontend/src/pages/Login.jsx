@@ -12,8 +12,8 @@ const Login = () => {
     email: '',
     password: '',
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null); // Estado para manejar alerts
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,32 +25,38 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    
+    // Validación básica
+    if (!formData.email || !formData.password) {
+      setAlert({
+        type: 'error',
+        message: 'Por favor, completa todos los campos.'
+      });
+      return;
+    }
+
     setLoading(true);
+    setAlert(null); 
 
     console.log('Intentando login con:', { email: formData.email, password: '***' });
 
     try {
-      const response = await login(formData.email, formData.password);
-      console.log('Login exitoso, respuesta:', response);
+      await login(formData.email, formData.password);
       navigate('/dashboard');
-    } catch (err) {
-      console.error('Error completo en login:', err);
-      console.error('Mensaje del error:', err.message);
-      console.error('Stack del error:', err.stack);
-      
-      // Mostrar el error real
-      const errorMessage = err.message || err.toString() || 'Error al iniciar sesión. Verifica tus credenciales.';
-      setError(errorMessage);
+    } catch (error) {
+      console.error('Error during login:', error);
+      const errorMessage = error.message || 'Error al iniciar sesión';
+      setAlert({
+        type: 'error',
+        message: errorMessage
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSubmit(e);
-    }
+  const handleCloseAlert = () => {
+    setAlert(null);
   };
 
   return (
@@ -65,8 +71,14 @@ const Login = () => {
           <p className="text-gray-600 mt-2">Inicia sesión en tu cuenta</p>
         </div>
 
-        {/* Alert */}
-        {error && <Alert type="error" message={error} onClose={() => setError('')} />}
+        {/* Alert de error */}
+        {alert && (
+          <Alert 
+            type={alert.type} 
+            message={alert.message} 
+            onClose={handleCloseAlert}
+          />
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">

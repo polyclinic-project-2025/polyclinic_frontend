@@ -8,6 +8,9 @@ const PERMISSIONS = {
     canCreateDepartments: true,
     canEditDepartments: true,
     canDeleteDepartments: true,
+    canCreateUsers: true,
+    canEditUsers: true,
+    canDeleteUsers: true,
     canViewReports: true,
     canManageStaff: true,
     canAccessAllModules: true,
@@ -17,6 +20,9 @@ const PERMISSIONS = {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
+    canCreateUsers: false,
+    canEditUsers: false,
+    canDeleteUsers: false,
     canViewReports: true,
     canManageStaff: false,
     canAccessAllModules: false,
@@ -26,6 +32,9 @@ const PERMISSIONS = {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
+    canCreateUsers: false,
+    canEditUsers: false,
+    canDeleteUsers: false,
     canViewReports: false,
     canManageStaff: false,
     canAccessAllModules: false,
@@ -35,6 +44,9 @@ const PERMISSIONS = {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
+    canCreateUsers: false,
+    canEditUsers: false,
+    canDeleteUsers: false,
     canViewReports: false,
     canManageStaff: false,
     canAccessAllModules: false,
@@ -44,6 +56,9 @@ const PERMISSIONS = {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
+    canCreateUsers: false,
+    canEditUsers: false,
+    canDeleteUsers: false,
     canViewReports: false,
     canManageStaff: false,
     canAccessAllModules: false,
@@ -56,6 +71,14 @@ const MODULE_ACCESS = {
   Nurse: ['dashboard', 'patients', 'consultations', 'emergency', 'departments'],
   MedicalStaff: ['dashboard', 'patients', 'consultations', 'departments'],
   Patient: ['dashboard', 'consultations', 'departments'],
+};
+
+const OPTIONS_ACCESS = {
+  Admin: ['account', 'users', 'about'],
+  Doctor: ['account', 'about'],
+  Nurse: ['account', 'about'],
+  MedicalStaff: ['account', 'about'],
+  Patient: ['account', 'about'],
 };
 
 
@@ -103,6 +126,19 @@ export const checkPermission = (userRoles, permission) => {
 };
 
 /**
+ * Verifica si el usuario tiene acceso a una opción específica
+ */
+export const canAccessOption = (userRoles, optionId) => {
+  if (!userRoles || userRoles.length === 0) return false;
+  // Si es Admin, puede acceder a todo
+  if (userRoles.includes('Admin')) return true;
+  // Verificar si alguno de los roles tiene acceso a la opción
+  return userRoles.some(role => {
+    const allowedOptions = OPTIONS_ACCESS[role] || [];
+    return allowedOptions.includes(optionId);
+  });
+};
+/**
  * Verifica si el usuario tiene acceso a un módulo específico
  */
 export const canAccessModule = (userRoles, moduleId) => {
@@ -117,6 +153,17 @@ export const canAccessModule = (userRoles, moduleId) => {
     return allowedModules.includes(moduleId);
   });
 };
+
+/**
+  * Filtra una lista de opciones según los permisos del usuario
+ */
+
+export const filterOptionsByPermission = (options, userRoles) => {
+  if (!userRoles || userRoles.length === 0) return [];
+  return options.filter(option =>
+    canAccessOption(userRoles, option.id)
+  );
+}
 
 /**
  * Filtra una lista de módulos según los permisos del usuario

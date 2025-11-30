@@ -20,18 +20,25 @@ export const useAuth = () => {
       // Guardar token y datos de usuario
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify({
+        id: response.userId,
         email: response.email,
         roles: response.roles,
+        phoneNumber: response.phoneNumber,
       }));
       
       setUser({
+        id: response.userId,              
         email: response.email,
         roles: response.roles,
+        phoneNumber: response.phoneNumber,  
       });
       
       return response;
     } catch (error) {
-      throw error;
+      throw new Error(
+        error.message || 
+        'Error al iniciar sesión'
+      );
     }
   };
 
@@ -42,18 +49,25 @@ export const useAuth = () => {
       // Guardar token y datos de usuario
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify({
+        id: response.userId,              
         email: response.email,
         roles: response.roles,
+        phoneNumber: response.phoneNumber,  
       }));
       
       setUser({
+        id: response.userId,              
         email: response.email,
         roles: response.roles,
+        phoneNumber: response.phoneNumber,  
       });
       
       return response;
     } catch (error) {
-      throw error;
+      throw new Error(
+        error.message || 
+        'Error al registrar usuario'
+      );
     }
   };
 
@@ -66,6 +80,11 @@ export const useAuth = () => {
     return user?.roles?.includes(role) || false;
   };
 
+  const updateUser = (updates) => {
+    const updatedUser = { ...user, ...updates };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
   return {
     user,
     loading,
@@ -74,5 +93,6 @@ export const useAuth = () => {
     register,
     logout,
     hasRole,
+    updateUser,
   };
 };

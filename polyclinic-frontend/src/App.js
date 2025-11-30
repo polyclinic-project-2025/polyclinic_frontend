@@ -19,7 +19,6 @@ const PrivateRoute = ({ children }) => {
 };
 
 // Componente para rutas públicas (login, register)
-// Si el usuario ya está autenticado, lo redirige al dashboard
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -50,6 +49,9 @@ function AppRoutes() {
           </PublicRoute>
         } 
       />
+
+      {/* ELIMINA ESTA RUTA - ya no es necesaria */}
+      {/* <Route path="/users" element={...} /> */}
 
       {/* Rutas protegidas */}
       <Route 
