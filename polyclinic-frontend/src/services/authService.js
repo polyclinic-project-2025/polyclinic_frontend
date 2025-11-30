@@ -15,22 +15,7 @@ export const authService = {
       console.error('authService.register - Error:', error);
       console.error('authService.register - Error response:', error.response?.data);
       
-      let errorMessage = 'Error al registrar usuario';
-      
-      if (error.response?.data) {
-        if (typeof error.response.data === 'string') {
-          errorMessage = error.response.data;
-        } else if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        } else if (error.response.data.title) {
-          errorMessage = error.response.data.title;
-        } else if (error.response.data.errors) {
-          errorMessage = Object.values(error.response.data.errors).flat().join(', ');
-        }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
+      const errorMessage = error.response?.data || 'Error al registrar usuario';
       throw new Error(errorMessage);
     }
   },
@@ -43,31 +28,12 @@ export const authService = {
       console.log('authService.login - Enviando:', { email: credentials.email, password: '***' });
       const response = await api.post('/Auth/login', credentials);
       console.log('authService.login - Respuesta exitosa:', response.data);
+      console.log(response.data);
       return response.data;
     } catch (error) {
-      console.error('authService.login - Error:', error);
-      console.error('authService.login - Error response:', error.response);
-      console.error('authService.login - Error data:', error.response?.data);
-      
-      let errorMessage = 'Credenciales inválidas';
-      
-      if (error.response?.data) {
-        if (typeof error.response.data === 'string') {
-          errorMessage = error.response.data;
-        } else if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        } else if (error.response.data.title) {
-          errorMessage = error.response.data.title;
-        } else if (error.response.data.errors) {
-          errorMessage = Object.values(error.response.data.errors).flat().join(', ');
-        }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      console.error('authService.login - Mensaje de error final:', errorMessage);
-      throw new Error(errorMessage);
-    }
+      const errorMessage = error.response?.data || 'Error al iniciar sesión';
+      console.error("error service",errorMessage)
+      throw new Error(errorMessage);}
   },
 
   /**
