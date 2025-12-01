@@ -62,6 +62,7 @@ function AppRoutes() {
           </PrivateRoute>
         } 
       />
+      
 
       {/* Ruta por defecto */}
       <Route path="/" element={<Navigate to="/dashboard" />} />

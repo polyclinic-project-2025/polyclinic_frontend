@@ -3,11 +3,15 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 
 
+
 const PERMISSIONS = {
   Admin: {
     canCreateDepartments: true,
     canEditDepartments: true,
     canDeleteDepartments: true,
+    canCreateConsultations: true, //para testing
+    canEditConsultations: true, //para testing
+    canDeleteConsultations: false,
     canCreateUsers: true,
     canEditUsers: true,
     canDeleteUsers: true,
@@ -20,6 +24,9 @@ const PERMISSIONS = {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
+    canCreateConsultations: false,
+    canEditConsultations: false,
+    canDeleteConsultations: false,
     canCreateUsers: false,
     canEditUsers: false,
     canDeleteUsers: false,
@@ -32,6 +39,9 @@ const PERMISSIONS = {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
+    canCreateConsultations: false,
+    canEditConsultations: false,
+    canDeleteConsultations: false,
     canCreateUsers: false,
     canEditUsers: false,
     canDeleteUsers: false,
@@ -44,6 +54,9 @@ const PERMISSIONS = {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
+    canCreateConsultations: false,
+    canEditConsultations: false,
+    canDeleteConsultations: false,
     canCreateUsers: false,
     canEditUsers: false,
     canDeleteUsers: false,
@@ -56,10 +69,28 @@ const PERMISSIONS = {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
+    canCreateConsultations: false,
+    canEditConsultations: false,
+    canDeleteConsultations: false,
     canCreateUsers: false,
     canEditUsers: false,
     canDeleteUsers: false,
     canViewReports: false,
+    canManageStaff: false,
+    canAccessAllModules: false,
+  },
+
+  DepartmentHead: {
+    canCreateDepartments: false,
+    canEditDepartments: false,
+    canDeleteDepartments: false,
+    canCreateConsultations: true,
+    canEditConsultations: true,
+    canDeleteConsultations: false,
+    canCreateUsers: false,
+    canEditUsers: false,
+    canDeleteUsers: false,
+    canViewReports: true,
     canManageStaff: false,
     canAccessAllModules: false,
   },
@@ -68,6 +99,7 @@ const PERMISSIONS = {
 const MODULE_ACCESS = {
   Admin: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'staff', 'medications', 'warehouse', 'reports'],
   Doctor: ['dashboard', 'patients', 'consultations', 'emergency', 'departments'],
+  DepartmentHead : ['dashboard', 'patients', 'consultations', 'emergency', 'departments'],
   Nurse: ['dashboard', 'patients', 'consultations', 'emergency', 'departments'],
   MedicalStaff: ['dashboard', 'patients', 'consultations', 'departments'],
   Patient: ['dashboard', 'consultations', 'departments'],
@@ -76,6 +108,7 @@ const MODULE_ACCESS = {
 const OPTIONS_ACCESS = {
   Admin: ['account', 'users', 'about'],
   Doctor: ['account', 'about'],
+  DepartmentHead: ['account', 'about'],
   Nurse: ['account', 'about'],
   MedicalStaff: ['account', 'about'],
   Patient: ['account', 'about'],
@@ -217,6 +250,12 @@ export const usePermissions = () => {
     isAdmin: () => {
       if (!user || !user.roles) return false;
       return user.roles.includes('Admin');
+    },
+
+    // Verificar si es departmentHead
+    isDepartmentHead: () => {
+      if (!user || !user.roles) return false;
+      return user.roles.includes('DepartmentHead');
     },
   };
 };

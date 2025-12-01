@@ -1,15 +1,16 @@
-// pages/Dashboard.jsx (CON MIDDLEWARE DE PERMISOS + USERS)
+// pages/Dashboard.jsx 
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LogOut, Activity, Users, Calendar, Bell, Settings,
-  Pill, AlertCircle, Package, Menu, Home, Building2, Stethoscope, BarChart3,
+  Pill, AlertCircle, Package, Menu, Home, Building2, Stethoscope, BarChart3, ChevronRight,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { usePermissions, filterModulesByPermission } from "../middleware/PermissionMiddleware";
 import Departments from "./Departments";
 import UsersView from "./UsersView";
 import ModalSettings from "../components/ModalSettings";
+import ConsultationsReferral from "./ConsultationsReferral";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ const Dashboard = () => {
   const [activeModule, setActiveModule] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showModalSettings, setShowModalSettings] = useState(false);
+  const [selectedMode, setSelectedMode] = useState(null);
+  const [activeItem, setActiveItem] = useState(null);
 
   // Detectar navegación desde ModalSettings
   useEffect(() => {
@@ -101,6 +104,50 @@ const Dashboard = () => {
     { id: "reports", name: "Reportes", icon: BarChart3 },
   ];
 
+  const menuItems = [
+    {
+      id: "consultations", 
+      modes: [
+        { id: "referral", name: "Por Remisión Médica" },
+        { id: "derivation", name: "Por Derivación Interna" }
+      ]
+    },
+  ];
+
+  const handleItemClick = (itemId) => {
+    const hasSubmenu = menuItems.find(item => item.id === itemId);
+    
+    if (hasSubmenu) {
+      // Si tiene submenú, solo abre/cierra el submenú sin cambiar el módulo activo
+      setActiveItem(activeItem === itemId ? null : itemId);
+    } else {
+      // Si no tiene submenú, cambia el módulo normalmente
+      setActiveModule(itemId);
+      setSelectedMode(null);
+      setActiveItem(null);
+    }
+  };
+
+  const handleModeSelect = (itemId, modeId) => {
+    setSelectedMode({ itemId, modeId });
+    setActiveModule(itemId);
+    setActiveItem(null);
+  };
+
+  // Cerrar submenú al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (activeItem && !event.target.closest('.sidebar-nav') && !event.target.closest('.submenu-container')) {
+        setActiveItem(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeItem]);
+
   const modules = filterModulesByPermission(allModules, user?.roles || []);
 
   const renderContent = () => {
@@ -119,6 +166,36 @@ const Dashboard = () => {
       );
     }
 
+    // Mostrar modo seleccionado si existe
+    if (selectedMode) {
+      const module = allModules.find(m => m.id === selectedMode.itemId);
+      const mode = menuItems
+        .find(item => item.id === selectedMode.itemId)
+        ?.modes.find(m => m.id === selectedMode.modeId);
+      switch (mode.id) {
+        case "referral":
+          console.log("Rendering ConsultationsReferral");
+          return <ConsultationsReferral />;
+        default:
+          return (
+          <div className="text-center py-12">
+            <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-6 max-w-md mx-auto">
+              <Calendar className="w-16 h-16 text-cyan-600 mx-auto mb-4" />
+              <p className="text-gray-700 text-lg font-semibold mb-2">
+                {module.name}
+              </p>
+              <p className="text-cyan-700 text-xl font-bold">
+                Modo: {mode.name}
+              </p>
+              <p className="text-gray-500 text-sm mt-4">
+                Contenido específico para este modo en desarrollo
+              </p>
+            </div>
+          </div>
+        );
+      }
+    }
+
     switch (activeModule) {
       case "users":
         return <UsersView />;
@@ -132,16 +209,21 @@ const Dashboard = () => {
           </div>
         );
       case "consultations":
-        return (
-          <div className="text-center py-12">
-            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Consultas en desarrollo</p>
-          </div>
-        );
+        if (!selectedMode || selectedMode.itemId !== "consultations") {
+          return (
+            <div className="text-center py-12">
+              <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">Selecciona un modo de consulta</p>
+              <p className="text-gray-400 text-sm mt-2">Usa el menú lateral para elegir el tipo de consulta</p>
+            </div>
+          );
+        }
+        // Si hay modo seleccionado, se renderiza en el switch principal
+        break;
       case "emergency":
         return (
           <div className="text-center py-12">
-            <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <Pill className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 text-lg">Módulo de Cuerpo de Guardia en desarrollo</p>
           </div>
         );
@@ -233,23 +315,56 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 sidebar-nav">
           {modules.map((module) => {
             const Icon = module.icon;
             const isActive = activeModule === module.id;
+            const hasSubmenu = menuItems.find(item => item.id === module.id);
+            const isSubmenuOpen = activeItem === module.id;
+
             return (
-              <button
-                key={module.id}
-                onClick={() => setActiveModule(module.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive
-                    ? "bg-gradient-to-r from-cyan-500 to-cyan-800 text-white shadow-lg"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <Icon size={20} />
-                {sidebarOpen && <span className="font-medium">{module.name}</span>}
-              </button>
+              <div key={module.id} className="relative">
+                <button
+                  onClick={() => handleItemClick(module.id)}
+                  className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${
+                    isActive
+                      ? "bg-gradient-to-r from-cyan-500 to-cyan-800 text-white shadow-lg"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon size={20} />
+                    {sidebarOpen && <span className="font-medium">{module.name}</span>}
+                  </div>
+                  {sidebarOpen && hasSubmenu && (
+                    <ChevronRight
+                      size={18}
+                      className={`transition-transform ${
+                        isSubmenuOpen ? "rotate-90" : ""
+                      }`}
+                    />
+                  )}
+                </button>
+
+                {/* Submenú lateral */}
+                {sidebarOpen && hasSubmenu && isSubmenuOpen && (
+                  <div className="submenu-container absolute left-full top-0 ml-2 bg-white shadow-xl rounded-lg border border-gray-200 z-40 min-w-[240px]">
+                    {hasSubmenu.modes.map((mode) => (
+                      <button
+                        key={mode.id}
+                        onClick={() => handleModeSelect(module.id, mode.id)}
+                        className={`w-full px-4 py-3 text-left hover:bg-cyan-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                          selectedMode?.itemId === module.id && selectedMode?.modeId === mode.id
+                            ? "bg-cyan-100 text-cyan-700 font-semibold"
+                            : "text-gray-700 border-b border-gray-200"
+                        }`}
+                      >
+                        {mode.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

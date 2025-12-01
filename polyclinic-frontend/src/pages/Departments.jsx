@@ -114,7 +114,7 @@ const Departments = () => {
       loadDepartments();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      const errorMessage = err.response?.data?.errorMessage || 'Error al guardar departamento';
+      const errorMessage = err.message || 'Error al guardar departamento';
       setError(errorMessage);
     } finally {
       setSubmitting(false);
