@@ -1,7 +1,7 @@
 // pages/Departments.jsx (CON MIDDLEWARE DE PERMISOS)
 import React, { useState, useEffect } from 'react';
 import {
-  Building2, Plus, Edit, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2,
+  Building2, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2,
 } from 'lucide-react';
 import { departmentService } from '../services/departmentService';
 import { useAuth } from '../context/AuthContext';
@@ -230,7 +230,7 @@ const Departments = () => {
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                     title="Editar"
                   >
-                    <Edit className="w-4 h-4" />
+                    <SquarePen className="w-4 h-4 text-cyan-600"/> 
                   </button>
                 </ProtectedComponent>
                 
