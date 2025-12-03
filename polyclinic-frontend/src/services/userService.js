@@ -9,7 +9,6 @@ export const userService = {
   getAll: async () => {
     try {
       const response = await api.get('/User');
-      console.log('📦 Respuesta completa del backend:', response.data);
       
       // El backend devuelve { isSuccess, value, errorMessage }
       if (response.data.isSuccess) {
@@ -45,9 +44,7 @@ export const userService = {
         patchData.value = value;
       }
 
-      console.log('📤 Enviando PATCH:', patchData);
       const response = await api.patch(`/User/${id}`, patchData);
-      console.log('📦 Respuesta de actualización:', response.data);
       
       if (response.data.isSuccess) {
         return response.data.value;
@@ -55,7 +52,6 @@ export const userService = {
         throw new Error(response.data.errorMessage || 'Error al actualizar usuario');
       }
     } catch (error) {
-      console.error("❌ Error en userService.patchField:", error.response?.data);
       const errorMessage = error.response?.data?.errorMessage || error.message || 'Error al actualizar usuario';
       throw new Error(errorMessage);
     }
@@ -100,7 +96,6 @@ export const userService = {
 
       return results[results.length - 1]; // Retornar el último resultado
     } catch (error) {
-      console.error("❌ Error en userService.patch:", error);
       throw error;
     }
   },
@@ -112,9 +107,7 @@ export const userService = {
    */
   delete: async (id) => {
     try {
-      const response = await api.delete(`/User/${id}`);
-      console.log('📦 Respuesta de eliminación:', response.data);
-      
+      const response = await api.delete(`/User/${id}`);      
       if (response.data.isSuccess) {
         return response.data.value;
       } else {
