@@ -11,6 +11,7 @@ import Departments from "./Departments";
 import UsersView from "./UsersView";
 import ModalSettings from "../components/ModalSettings";
 import ConsultationsReferral from "./ConsultationsReferral";
+import Employees from "./Employees";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -29,7 +30,23 @@ const Dashboard = () => {
     if (location.pathname === '/users') {
       setActiveModule('users');
     }
-  }, [location.pathname]);
+
+    if (location.pathname.startsWith('/employees')) {
+      setActiveModule('staff');
+
+      const params = new URLSearchParams(location.search);
+      const type = params.get('type');
+
+      if (type === 'doctor' || type === 'nurse') {
+        setSelectedMode({ itemId: 'staff', modeId: type });
+      } else {
+        setSelectedMode(null);
+      }
+
+      setActiveItem(null);
+    }
+  }, [location.pathname, location.search]);
+
 
   const handleLogout = () => {
     logout();
@@ -112,6 +129,13 @@ const Dashboard = () => {
         { id: "derivation", name: "Por Derivación Interna" }
       ]
     },
+    {
+    id: "staff",
+    modes: [
+      { id: "doctor", name: "Doctores" },
+      { id: "nurse", name: "Enfermeros" }
+    ]
+  },
   ];
 
   const handleItemClick = (itemId) => {
@@ -128,11 +152,29 @@ const Dashboard = () => {
     }
   };
 
+  // Debug: muestra cambios de location y selectedMode
+  useEffect(() => {
+    console.log("DEBUG: location changed:", location.pathname, location.search);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    console.log("DEBUG: selectedMode changed:", selectedMode);
+  }, [selectedMode]);
+
   const handleModeSelect = (itemId, modeId) => {
+    if (itemId === 'staff') {
+      navigate(`/employees?type=${modeId}`);
+      setSelectedMode({ itemId: 'staff', modeId });
+      setActiveModule('staff');
+      setActiveItem(null);
+      return;
+    }
+
     setSelectedMode({ itemId, modeId });
     setActiveModule(itemId);
     setActiveItem(null);
   };
+
 
   // Cerrar submenú al hacer click fuera
   useEffect(() => {
@@ -172,6 +214,11 @@ const Dashboard = () => {
       const mode = menuItems
         .find(item => item.id === selectedMode.itemId)
         ?.modes.find(m => m.id === selectedMode.modeId);
+
+      if (selectedMode.itemId === 'staff' && (mode.id === 'doctor' || mode.id === 'nurse')) {
+        return <Employees type={mode.id} />;
+      }
+
       switch (mode.id) {
         case "referral":
           console.log("Rendering ConsultationsReferral");
@@ -346,24 +393,48 @@ const Dashboard = () => {
                   )}
                 </button>
 
-                {/* Submenú lateral */}
+                {/* Submenú: inline para 'staff', panel lateral para el resto */}
                 {sidebarOpen && hasSubmenu && isSubmenuOpen && (
-                  <div className="submenu-container absolute left-full top-0 ml-2 bg-white shadow-xl rounded-lg border border-gray-200 z-40 min-w-[240px]">
-                    {hasSubmenu.modes.map((mode) => (
-                      <button
-                        key={mode.id}
-                        onClick={() => handleModeSelect(module.id, mode.id)}
-                        className={`w-full px-4 py-3 text-left hover:bg-cyan-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                          selectedMode?.itemId === module.id && selectedMode?.modeId === mode.id
-                            ? "bg-cyan-100 text-cyan-700 font-semibold"
-                            : "text-gray-700 border-b border-gray-200"
-                        }`}
-                      >
-                        {mode.name}
-                      </button>
-                    ))}
-                  </div>
+                  module.id === 'staff' ? (
+                    <div
+                      className="mt-2 pl-10 pr-4 space-y-1"
+                      role="menu"
+                      aria-labelledby={`menu-${module.id}`}
+                    >
+                      {hasSubmenu.modes.map((mode) => (
+                        <button
+                          key={mode.id}
+                          onClick={() => handleModeSelect(module.id, mode.id)}
+                          className={`w-full text-left px-4 py-2 rounded-lg hover:bg-cyan-50 transition ${
+                            selectedMode?.itemId === module.id && selectedMode?.modeId === mode.id
+                              ? "bg-cyan-100 text-cyan-700 font-semibold"
+                              : "text-gray-700"
+                          }`}
+                          role="menuitem"
+                        >
+                          {mode.name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="submenu-container absolute left-full top-0 ml-2 bg-white shadow-xl rounded-lg border border-gray-200 z-40 min-w-[240px]">
+                      {hasSubmenu.modes.map((mode) => (
+                        <button
+                          key={mode.id}
+                          onClick={() => handleModeSelect(module.id, mode.id)}
+                          className={`w-full px-4 py-3 text-left hover:bg-cyan-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                            selectedMode?.itemId === module.id && selectedMode?.modeId === mode.id
+                              ? "bg-cyan-100 text-cyan-700 font-semibold"
+                              : "text-gray-700 border-b border-gray-200"
+                          }`}
+                        >
+                          {mode.name}
+                        </button>
+                      ))}
+                    </div>
+                  )
                 )}
+
               </div>
             );
           })}

@@ -18,6 +18,9 @@ const PERMISSIONS = {
     canViewReports: true,
     canManageStaff: true,
     canAccessAllModules: true,
+    canCreateStaff: true,
+    canEditStaff: true,
+    canDeleteStaff: true,
   },
   
   Doctor: {
@@ -33,6 +36,9 @@ const PERMISSIONS = {
     canViewReports: true,
     canManageStaff: false,
     canAccessAllModules: false,
+    canCreateStaff: false,
+    canEditStaff: false,
+    canDeleteStaff: false,
   },
   
   Nurse: {
@@ -48,6 +54,9 @@ const PERMISSIONS = {
     canViewReports: false,
     canManageStaff: false,
     canAccessAllModules: false,
+    canCreateStaff: false,
+    canEditStaff: false,
+    canDeleteStaff: false,
   },
   
   MedicalStaff: {
@@ -63,6 +72,9 @@ const PERMISSIONS = {
     canViewReports: false,
     canManageStaff: false,
     canAccessAllModules: false,
+    canCreateStaff: false,
+    canEditStaff: false,
+    canDeleteStaff: false,
   },
   
   Patient: {
@@ -78,6 +90,9 @@ const PERMISSIONS = {
     canViewReports: false,
     canManageStaff: false,
     canAccessAllModules: false,
+    canCreateStaff: false,
+    canEditStaff: false,
+    canDeleteStaff: false,
   },
 
   DepartmentHead: {
@@ -93,6 +108,9 @@ const PERMISSIONS = {
     canViewReports: true,
     canManageStaff: false,
     canAccessAllModules: false,
+    canCreateStaff: false,
+    canEditStaff: false,
+    canDeleteStaff: false,
   },
 };
 
