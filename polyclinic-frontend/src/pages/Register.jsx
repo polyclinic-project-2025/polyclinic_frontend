@@ -167,7 +167,7 @@ const Register = () => {
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+              className=" w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
             >
               {roles.map((role) => (
                 <option key={role.value} value={role.value}>

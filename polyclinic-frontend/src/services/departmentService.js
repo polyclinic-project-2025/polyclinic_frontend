@@ -17,6 +17,20 @@ export const departmentService = {
   },
 
   /**
+   * Obtiene todos los doctores de un departamento
+   * @returns {Promise<Array>}
+   */
+  getDoctors: async (id) => {
+    try {
+      const response = await api.get(`/Departments/${id}/doctors`);
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener doctores';
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
    * Obtiene un departamento por ID
    * @param {string} id - GUID del departamento
    * @returns {Promise<Object>}

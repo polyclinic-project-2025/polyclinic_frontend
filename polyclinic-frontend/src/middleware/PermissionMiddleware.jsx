@@ -9,8 +9,8 @@ const PERMISSIONS = {
     canCreateDepartments: true,
     canEditDepartments: true,
     canDeleteDepartments: true,
-    canCreateConsultations: true, //para testing
-    canEditConsultations: true, //para testing
+    canCreateConsultations: false, //para testing
+    canEditConsultations: false, //para testing
     canDeleteConsultations: false,
     canCreateUsers: true,
     canEditUsers: true,
@@ -27,8 +27,8 @@ const PERMISSIONS = {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
-    canCreateConsultations: false,
-    canEditConsultations: false,
+    canCreateConsultations: true,
+    canEditConsultations: true,
     canDeleteConsultations: false,
     canCreateUsers: false,
     canEditUsers: false,
@@ -94,30 +94,11 @@ const PERMISSIONS = {
     canEditStaff: false,
     canDeleteStaff: false,
   },
-
-  DepartmentHead: {
-    canCreateDepartments: false,
-    canEditDepartments: false,
-    canDeleteDepartments: false,
-    canCreateConsultations: true,
-    canEditConsultations: true,
-    canDeleteConsultations: false,
-    canCreateUsers: false,
-    canEditUsers: false,
-    canDeleteUsers: false,
-    canViewReports: true,
-    canManageStaff: false,
-    canAccessAllModules: false,
-    canCreateStaff: false,
-    canEditStaff: false,
-    canDeleteStaff: false,
-  },
 };
 
 const MODULE_ACCESS = {
   Admin: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'staff', 'medications', 'warehouse', 'reports'],
   Doctor: ['dashboard', 'patients', 'consultations', 'emergency', 'departments'],
-  DepartmentHead : ['dashboard', 'patients', 'consultations', 'emergency', 'departments'],
   Nurse: ['dashboard', 'patients', 'consultations', 'emergency', 'departments'],
   MedicalStaff: ['dashboard', 'patients', 'consultations', 'departments'],
   Patient: ['dashboard', 'consultations', 'departments'],
@@ -126,7 +107,6 @@ const MODULE_ACCESS = {
 const OPTIONS_ACCESS = {
   Admin: ['account', 'users', 'about'],
   Doctor: ['account', 'about'],
-  DepartmentHead: ['account', 'about'],
   Nurse: ['account', 'about'],
   MedicalStaff: ['account', 'about'],
   Patient: ['account', 'about'],
@@ -168,7 +148,6 @@ export const ProtectedComponent = ({
  */
 export const checkPermission = (userRoles, permission) => {
   if (!userRoles || userRoles.length === 0) return false;
-
   // Verificar si alguno de los roles tiene el permiso
   return userRoles.some(role => {
     const rolePermissions = PERMISSIONS[role];
