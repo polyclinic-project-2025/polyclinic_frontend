@@ -1,11 +1,11 @@
-import { X, AlertCircle, Loader2, MinusCircle } from "lucide-react";
-import { useState, useCallback, useEffect } from "react";
+import { X, AlertCircle, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { consultationReferralService } from "../services/consultationReferralService";
 import Selector from "./Selector";
 import CustomDatePicker from "./CustmonDatePicker";
-import { patientService } from "../services/patientService";
 import { departmentService } from "../services/departmentService";
 import { referralService } from "../services/referralService";
+import { departmentHedService } from "../services/departmentHeadService";
 
 const ModalConsultation = ({
   isOpen,
@@ -20,17 +20,10 @@ const ModalConsultation = ({
     departmentId: "",
     doctorId: "",
     diagnostic: "",
-    medication: [],
     patient: null,
     department: null,
     doctor: null,
   };
-
-  const [newMedication, setNewMedication] = useState({
-    name: null,
-    dosage: "",
-    frequency: "",
-  });
 
   const [formData, setFormData] = useState(initialData);
   const [error, setError] = useState("");
@@ -39,32 +32,22 @@ const ModalConsultation = ({
 
   // Cargar datos cuando se abre en modo edición
   useEffect(() => {
+    
     if (isOpen && modalMode === "edit" && selected) {
-      const dateForPicker = selected.dateTimeCRem 
-        ? new Date(selected.dateTimeCRem) 
-        : "";
+      const dateForPicker = new Date(selected.dateTimeCRem).toISOString();
 
-      setFormData({
-        patientId: selected.patientId || selected.referralId || "",
-        patient: { 
-          id: selected.patientId || selected.referralId,
-          patientName: selected.patientFullName || selected.patientName,
-          name: selected.patientFullName || selected.patientName
-        },
+      const editFormData = {
+        patientId: selected.referralId,
+        patient: selected.patientFullName,
         dateTime: dateForPicker,
-        departmentId: selected.departmentId || "",
-        department: { 
-          id: selected.departmentId, 
-          name: selected.departmentName 
-        },
-        doctorId: selected.doctorId || "",
-        doctor: { 
-          id: selected.doctorId, 
-          name: selected.doctorFullName 
-        },
-        diagnostic: selected.diagnosis || "",
-        medication: selected.medication || [],
-      });
+        departmentId: "",
+        department: "" ,
+        doctorId: selected.doctorId,
+        doctor: selected.doctorFullName,
+        diagnostic: selected.diagnosis,
+      };
+      
+      setFormData(editFormData);
     } else if (isOpen && modalMode === "create") {
       setFormData(initialData);
     }
@@ -72,40 +55,38 @@ const ModalConsultation = ({
 
   const handleClose = () => {
     setFormData(initialData);
-    setNewMedication({ name: null, dosage: "", frequency: "" });
     setError("");
     setSuccess("");
     onClose();
   };
 
-  const handleAddMedication = useCallback(() => {
-    if (newMedication.name && newMedication.dosage && newMedication.frequency) {
-      setFormData((prevData) => ({
-        ...prevData,
-        medication: [
-          ...prevData.medication,
-          {
-            ...newMedication,
-            name: newMedication.name.name || newMedication.name,
-          },
-        ],
-      }));
-
-      setNewMedication({ name: null, dosage: "", frequency: "" });
-    } else {
-      setError(
-        "Debe completar todos los campos del medicamento (Nombre, Dosis, Frecuencia)"
-      );
-      setTimeout(() => setError(""), 3000);
-    }
-  }, [newMedication]);
-
-  const handleRemoveMedication = (index) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      medication: prevData.medication.filter((_, i) => i !== index),
-    }));
+  // Manejar cambio de departamento y resetear doctor
+  const handleDepartmentChange = (department) => {
+    
+    const updatedFormData = { 
+      ...formData, 
+      department: department.name,
+      departmentId: department?.departmentId || "",
+      doctor: null,
+      doctorId: "" 
+    };
+    
+    setFormData(updatedFormData);
   };
+
+  const getDepartmentHeadId = async (departmentId) => {
+    
+    try {
+        const departmentHeads = await departmentHedService.getAll();
+        const foundDepartmentHead = departmentHeads.find(head => 
+        head.departmentId === formData.departmentId);
+        var result = foundDepartmentHead.departmentHeadId;
+        return result;    
+      } catch (error) {
+      
+        return null;
+      }
+    };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,27 +94,48 @@ const ModalConsultation = ({
     setError("");
 
     try {
-      const dataToSend = {
-        referralId: formData.patient?.id || formData.patient?.referralId || formData.patientId,
-        doctorId: formData.doctor?.id || formData.doctorId,
-        dateTimeCRem: formData.dateTime 
-          ? new Date(formData.dateTime).toISOString() 
-          : new Date().toISOString(),
-        departmentHeadId: formData.department?.id || formData.departmentId,
-        diagnosis: formData.diagnostic,
-      };
+      
+      if (!formData.patient?.id && !formData.patientId) {
+        throw new Error("Debe seleccionar un paciente");
+      }
 
-      console.log("Datos a enviar:", dataToSend);
+      if (!formData.doctor?.id && !formData.doctorId) {
+        throw new Error("Debe seleccionar un doctor");
+      }
+
+      if (!formData.department?.id && !formData.departmentId) {
+        throw new Error("Debe seleccionar un departamento");
+      }
+
+      if (!formData.diagnostic || formData.diagnostic.trim() === "") {
+        throw new Error("Debe ingresar un diagnóstico");
+      }
+      
+      const departmentHeadId = await getDepartmentHeadId(formData.departmentId);
+
+      if (!departmentHeadId) {
+        throw new Error("No se pudo obtener el jefe de departamento");
+      }
+
+      const dataToSend = {
+        referralId: formData.patientId,
+        doctorId: formData.doctorId,
+        dateTimeCRem: new Date(formData.dateTime).toISOString(),
+        departmentHeadId: departmentHeadId,
+        diagnosis: formData.diagnostic.trim(),
+      };
+      console.log("dataToSend: ", dataToSend)
 
       if (modalMode === "create") {
-        await consultationReferralService.create(dataToSend);
+        const response = await consultationReferralService.create(dataToSend);
         setSuccess("Consulta agregada exitosamente");
       } else if (selected != null) {
-        await consultationReferralService.update(selected.id, dataToSend);
+        const response = await consultationReferralService.update(selected.consultationReferralId, dataToSend);
         setSuccess("Consulta actualizada exitosamente");
       }
       
       loadConsultations();
+      
       setTimeout(() => {
         handleClose();
       }, 1500);
@@ -157,7 +159,7 @@ const ModalConsultation = ({
       }}
     >
       <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 border-b border-gray-200 bg-white rounded-t-2xl sticky top-0 z-10">
@@ -178,7 +180,7 @@ const ModalConsultation = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fecha de la Consulta
+                Fecha de la Consulta <span className="text-red-500">*</span>
               </label>
               <CustomDatePicker
                 selected={formData.dateTime}
@@ -189,7 +191,7 @@ const ModalConsultation = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Diagnóstico
+                Diagnóstico <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -207,7 +209,14 @@ const ModalConsultation = ({
             <Selector
               service={referralService}
               selected={formData.patient}
-              onSelect={(patient) => setFormData({ ...formData, patient })}
+              onSelect={(patient) => {
+                const updatedData = { 
+                  ...formData, 
+                  patient : patient.patientName,
+                  patientId: patient?.referralId
+                };
+                setFormData(updatedData);
+              }}
               label="Paciente"
               placeholder="Selecciona un paciente"
               required={true}
@@ -239,9 +248,7 @@ const ModalConsultation = ({
             <Selector
               service={departmentService}
               selected={formData.department}
-              onSelect={(department) =>
-                setFormData({ ...formData, department })
-              }
+              onSelect={handleDepartmentChange}
               label="Departamento"
               placeholder="Selecciona un departamento"
               required={true}
@@ -253,26 +260,43 @@ const ModalConsultation = ({
                 </span>
               )}
             />
-            <Selector
-              service={departmentService}
-              method="getDoctors"
-              selected={formData.doctor}
-              onSelect={(doctor) => setFormData({ ...formData, doctor })}
-              label="Doctor"
-              placeholder="Selecciona un doctor"
-              required={true}
-              getDisplayText={(item) => item?.name || ''}
-              getSearchableText={(item) => item?.name || ''}
-              renderItem={(item, isSelected) => (
-                <span className={isSelected ? 'font-semibold' : ''}>
-                  {item.name}
-                </span>
-              )}
-            />
-          </div>
-
-          <div className="space-y-4 pt-4">
-            {/* Sección de medicamentos comentada */}
+            
+            {formData.departmentId ? (
+              <Selector
+                key={formData.departmentId} 
+                service={departmentService}
+                method="getDoctors"
+                methodParams={formData.departmentId}
+                selected={formData.doctor}
+                onSelect={(doctor) => {
+                  const updatedData = { 
+                    ...formData, 
+                    doctor : doctor.name,
+                    doctorId: doctor?.employeeId || ""
+                  };
+                  setFormData(updatedData);
+                }}
+                label="Doctor"
+                placeholder="Selecciona un doctor"
+                required={true}
+                getDisplayText={(item) => item?.name || ''}
+                getSearchableText={(item) => item?.name || ''}
+                renderItem={(item, isSelected) => (
+                  <span className={isSelected ? 'font-semibold' : ''}>
+                    {item.name}
+                  </span>
+                )}
+              />
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Doctor <span className="text-red-500">*</span>
+                </label>
+                <div className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-400 flex items-center justify-center">
+                  <span>Primero selecciona un departamento</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {error && (

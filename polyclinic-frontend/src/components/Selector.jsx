@@ -5,6 +5,7 @@ import { Search, ChevronDown, X } from "lucide-react";
 const GenericSelector = ({
   service,
   method,
+  methodParams, // NUEVO: parámetros para el método
   selected,
   onSelect,
   getDisplayText,
@@ -25,9 +26,10 @@ const GenericSelector = ({
 
   const dropdownRef = useRef(null);
 
+  // Recargar items cuando cambian los parámetros del método
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [methodParams]);
 
   // Click outside (más robusto)
   useEffect(() => {
@@ -59,7 +61,11 @@ const GenericSelector = ({
       let data = null;
       switch (method) {
         case "getDoctors":
-          data = await service.getDoctors();
+          if (methodParams) {
+            data = await service.getDoctors(methodParams);
+          } else {
+            data = await service.getDoctors();
+          }
           break;
         default:
           data = await service.getAll();
@@ -71,6 +77,8 @@ const GenericSelector = ({
       setFilteredItems(finalData);
     } catch (error) {
       console.error("Error al cargar datos:", error);
+      setItems([]);
+      setFilteredItems([]);
     } finally {
       setLoading(false);
     }
@@ -159,7 +167,7 @@ const GenericSelector = ({
               </div>
             </div>
 
-            <div className="overflow-y-auto max-h-20">
+            <div className="overflow-y-auto max-h-60">
               {loading ? (
                 <div className="p-4 text-center text-gray-500">Cargando...</div>
               ) : filteredItems.length === 0 ? (
