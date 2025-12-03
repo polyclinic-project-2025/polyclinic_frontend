@@ -106,7 +106,7 @@ const Departments = () => {
         await departmentService.create(formData);
         setSuccess('Departamento creado exitosamente');
       } else {
-        await departmentService.update(selectedDepartment.id, formData);
+        await departmentService.update(selectedDepartment.departmentId, formData);
         setSuccess('Departamento actualizado exitosamente');
       }
       
@@ -207,7 +207,7 @@ const Departments = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDepartments.map((department) => (
           <div
-            key={department.id}
+            key={department.departmentId}
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
           >
             <div className="flex items-start justify-between mb-4">
