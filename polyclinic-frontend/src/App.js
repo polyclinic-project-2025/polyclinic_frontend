@@ -62,7 +62,14 @@ function AppRoutes() {
           </PrivateRoute>
         } 
       />
-      
+      <Route 
+        path="/employees" 
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        } 
+      />
 
       {/* Ruta por defecto */}
       <Route path="/" element={<Navigate to="/dashboard" />} />
