@@ -17,6 +17,34 @@ export const consultationReferralService = {
   },
 
   /**
+   * Obtiene ultimas 10 coonsultas
+   * @returns {Promise<Array>}
+   */
+  getLastTen: async () => {
+    try {
+      const response = await api.get('/ConsultationReferral/recent');
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener consultas';
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Obtiene consultas en un rango de fechas
+   * @returns {Promise<Array>}
+   */
+  inRange: async (start, end) => {
+    try {
+      const response = await api.get(`/ConsultationReferral/in-range?start=${start}&end=${end}`);
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener consultas';
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
    * Obtiene una consulta por ID
    * @param {string} id - GUID de la consulta 
    * @returns {Promise<Object>}

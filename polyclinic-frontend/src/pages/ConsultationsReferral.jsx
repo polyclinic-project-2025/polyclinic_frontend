@@ -1,4 +1,4 @@
-// pages/Consultations.jsx (CORREGIDO)
+// pages/Consultations.jsx (CORREGIDO FINAL)
 import React, { useState, useEffect } from "react";
 import {
   Building2,
@@ -19,6 +19,9 @@ import {
   usePermissions,
 } from "../middleware/PermissionMiddleware";
 import ModalConsultation from "../components/ModalConsultation";
+
+import RecentConsultationsWidget from "../components/RecentConsultationsWidget";
+import ConsultationsDateRangeFilter from "../components/ConsultationsDateRangeFilter"; // Usamos la versión V2 corregida
 
 const Consultations = () => {
   const { can } = usePermissions();
@@ -133,6 +136,17 @@ const Consultations = () => {
         />
       </div>
 
+      <h2 className="text-2xl font-bold text-gray-900 mt-8">
+        Analíticas Rápidas
+      </h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Componente para el rango de fechas, con el service como prop */}
+        <ConsultationsDateRangeFilter service={consultationReferralService} />
+
+        {/* Componente para las últimas 10, con el service como prop */}
+        <RecentConsultationsWidget service={consultationReferralService} />
+      </div>
+
       {/* Alerts */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
@@ -209,8 +223,14 @@ const Consultations = () => {
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Calendar className="w-4 h-4" />
                   <span>
-                    {new Date(consultation.dateTimeCRem).toLocaleString(
-                      "es-ES"
+                    {new Date(consultation.dateTimeCRem).toLocaleDateString(
+                      "es-ES",
+                      {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        timeZone: "UTC", // <--- FUERZA la visualización en UTC
+                      }
                     )}
                   </span>
                 </div>
