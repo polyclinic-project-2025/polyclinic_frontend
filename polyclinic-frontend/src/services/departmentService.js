@@ -17,20 +17,6 @@ export const departmentService = {
   },
 
   /**
-   * Obtiene todos los doctores de un departamento
-   * @returns {Promise<Array>}
-   */
-  getDoctors: async (id) => {
-    try {
-      const response = await api.get(`/Departments/${id}/doctors`);
-      return response.data;
-    } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener doctores';
-      throw new Error(errorMessage);
-    }
-  },
-
-  /**
    * Obtiene un departamento por ID
    * @param {string} id - GUID del departamento
    * @returns {Promise<Object>}
@@ -47,8 +33,24 @@ export const departmentService = {
   },
 
   /**
+   * Obtiene todos los doctores de un departamento
+   * @param {string} departmentId - GUID del departamento
+   * @returns {Promise<Array>}
+   */
+  getDoctorsByDepartment: async (departmentId) => {
+    try {
+      const response = await api.get(`/Departments/${departmentId}/doctors`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener doctores del departamento:', error);
+      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener doctores del departamento';
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
    * Crea un nuevo departamento
-   * @param {Object} departmentData - { name, description }
+   * @param {Object} departmentData - { name }
    * @returns {Promise<Object>}
    */
   create: async (departmentData) => {
@@ -65,7 +67,7 @@ export const departmentService = {
   /**
    * Actualiza un departamento existente
    * @param {string} id - GUID del departamento
-   * @param {Object} departmentData - { name, description }
+   * @param {Object} departmentData - { name }
    * @returns {Promise<void>}
    */
   update: async (id, departmentData) => {

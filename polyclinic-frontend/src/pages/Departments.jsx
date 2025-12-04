@@ -1,46 +1,104 @@
-// pages/Departments.jsx (CON MIDDLEWARE DE PERMISOS)
+// pages/Departments.jsx
 import React, { useState, useEffect } from 'react';
 import {
-  Building2, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2,
+  Building2, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, UserCog, User
 } from 'lucide-react';
 import { departmentService } from '../services/departmentService';
+import { departmentHeadService } from '../services/departmentHeadService';
+import { employeeService } from '../services/employeeService';
 import { useAuth } from '../context/AuthContext';
 import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
 
 const Departments = () => {
   const { hasRole } = useAuth();
-  const { can, isAdmin } = usePermissions(); // ← Hook de permisos
+  const { can, isAdmin } = usePermissions();
   const [departments, setDepartments] = useState([]);
+  const [allDoctors, setAllDoctors] = useState([]); // Todos los doctores del sistema
+  const [departmentHeads, setDepartmentHeads] = useState({}); // { departmentId: headInfo }
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showHeadModal, setShowHeadModal] = useState(false);
   const [modalMode, setModalMode] = useState('create');
   const [selectedDepartment, setSelectedDepartment] = useState(null);
-  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [formData, setFormData] = useState({ name: '' });
+  const [doctors, setDoctors] = useState([]); // Doctores del departamento seleccionado
+  const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadDepartments();
+    loadInitialData();
   }, []);
 
-  const loadDepartments = async () => {
+  const loadInitialData = async () => {
     try {
       setLoading(true);
-      const data = await departmentService.getAll();
-      setDepartments(data);
+      // Cargar departamentos y doctores en paralelo
+      const [departmentsData, doctorsData] = await Promise.all([
+        departmentService.getAll(),
+        employeeService.getAllByType('doctor')
+      ]);
+      
+      setDepartments(departmentsData);
+      setAllDoctors(doctorsData);
+      
+      // Cargar jefes de cada departamento
+      await loadDepartmentHeads(departmentsData);
     } catch (err) {
-      const errorMessage = err.message || 'Error al cargar departamentos';
-
+      const errorMessage = err.message || 'Error al cargar datos';
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadDepartmentHeads = async (departmentsList) => {
+    const headsMap = {};
+    
+    // Intentar obtener el jefe de cada departamento
+    await Promise.all(
+      departmentsList.map(async (dept) => {
+        try {
+          const headInfo = await departmentHeadService.getByDepartmentId(dept.departmentId);
+          headsMap[dept.departmentId] = headInfo;
+        } catch (err) {
+          // Si no hay jefe asignado, el endpoint retorna 404, lo cual es normal
+          headsMap[dept.departmentId] = null;
+        }
+      })
+    );
+    
+    setDepartmentHeads(headsMap);
+  };
+
+  const loadDepartments = async () => {
+    await loadInitialData();
+  };
+
+  const loadDoctorsByDepartment = async (departmentId) => {
+    try {
+      const data = await departmentService.getDoctorsByDepartment(departmentId);
+      setDoctors(data);
+    } catch (err) {
+      console.error('Error al cargar doctores:', err);
+      setDoctors([]);
+    }
+  };
+
+  // Obtener nombre del jefe de departamento
+  const getDepartmentHeadName = (departmentId) => {
+    const headInfo = departmentHeads[departmentId];
+    if (!headInfo) return 'Jefe no asignado';
+    
+    // Buscar el doctor en la lista de todos los doctores
+    const doctor = allDoctors.find(d => d.employeeId === headInfo.doctorId);
+    return doctor ? doctor.name : 'Jefe no asignado';
+  };
+
   const handleCreate = () => {
-    // ← Validar permiso antes de abrir modal
     if (!can('canCreateDepartments')) {
       setError('No tienes permisos para crear departamentos');
       setTimeout(() => setError(''), 3000);
@@ -48,14 +106,13 @@ const Departments = () => {
     }
 
     setModalMode('create');
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '' });
     setSelectedDepartment(null);
     setShowModal(true);
     setError('');
   };
 
   const handleEdit = (department) => {
-    // ← Validar permiso antes de editar
     if (!can('canEditDepartments')) {
       setError('No tienes permisos para editar departamentos');
       setTimeout(() => setError(''), 3000);
@@ -64,16 +121,29 @@ const Departments = () => {
 
     setModalMode('edit');
     setFormData({
-      name: department.name,
-      description: department.description || '',
+      name: department.name
     });
     setSelectedDepartment(department);
     setShowModal(true);
     setError('');
   };
 
+  const handleAssignHead = async (department) => {
+    if (!can('canEditDepartments')) {
+      setError('No tienes permisos para asignar jefes de departamento');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    setSelectedDepartment(department);
+    setDoctorSearchTerm('');
+    setSelectedDoctor(null);
+    await loadDoctorsByDepartment(department.departmentId);
+    setShowHeadModal(true);
+    setError('');
+  };
+
   const handleDelete = async (id, name) => {
-    // ← Validar permiso antes de eliminar
     if (!can('canDeleteDepartments')) {
       setError('No tienes permisos para eliminar departamentos');
       setTimeout(() => setError(''), 3000);
@@ -121,9 +191,37 @@ const Departments = () => {
     }
   };
 
+  const handleAssignDepartmentHead = async () => {
+    if (!selectedDoctor) {
+      setError('Debe seleccionar un doctor');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await departmentHeadService.assign(selectedDepartment.departmentId, selectedDoctor.employeeId);
+      setSuccess('Jefe de departamento asignado exitosamente');
+      setShowHeadModal(false);
+      loadDepartments();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al asignar jefe de departamento';
+      setError(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const filteredDepartments = departments.filter((dept) =>
-    dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (dept.description && dept.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    dept.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredDoctors = doctors.filter((doc) =>
+    doc.name.toLowerCase().includes(doctorSearchTerm.toLowerCase()) ||
+    doc.identification.toLowerCase().includes(doctorSearchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -144,11 +242,10 @@ const Departments = () => {
             Departamentos
           </h1>
           <p className="text-gray-600 mt-1">
-            Gestiona los departamentos de la policlínica
+            Gestiona los departamentos del policlínico
           </p>
         </div>
         
-        {/* ← BOTÓN PROTEGIDO: Solo visible si tiene permiso */}
         <ProtectedComponent requiredPermission="canCreateDepartments">
           <button
             onClick={handleCreate}
@@ -193,7 +290,6 @@ const Departments = () => {
         </div>
       )}
 
-      {/* ← ALERTA: Solo visible si NO es admin */}
       {!isAdmin() && (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-3">
           <AlertCircle className="text-yellow-600 flex-shrink-0" />
@@ -222,8 +318,18 @@ const Departments = () => {
                 </div>
               </div>
               
-              {/* ← BOTONES DE ACCIÓN PROTEGIDOS */}
+              {/* Botones de Acción */}
               <div className="flex gap-2">
+                <ProtectedComponent requiredPermission="canEditDepartments">
+                  <button
+                    onClick={() => handleAssignHead(department)}
+                    className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                    title="Asignar Jefe de Departamento"
+                  >
+                    <UserCog className="w-4 h-4" />
+                  </button>
+                </ProtectedComponent>
+
                 <ProtectedComponent requiredPermission="canEditDepartments">
                   <button
                     onClick={() => handleEdit(department)}
@@ -236,7 +342,7 @@ const Departments = () => {
                 
                 <ProtectedComponent requiredPermission="canDeleteDepartments">
                   <button
-                    onClick={() => handleDelete(department.id, department.name)}
+                    onClick={() => handleDelete(department.departmentId, department.name)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                     title="Eliminar"
                   >
@@ -245,9 +351,14 @@ const Departments = () => {
                 </ProtectedComponent>
               </div>
             </div>
-            {department.description && (
-              <p className="text-gray-600 text-sm">{department.description}</p>
-            )}
+            
+            {/* Información del Jefe de Departamento */}
+            <div className="space-y-2 text-sm">
+              <p className="text-sm text-gray-600 flex items-center gap-1">
+                <User className="w-4 h-4" />
+                <span> {getDepartmentHeadName(department.departmentId)} </span>
+              </p>
+            </div>
           </div>
         ))}
       </div>
@@ -261,7 +372,7 @@ const Departments = () => {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal Crear/Editar Departamento */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -279,10 +390,10 @@ const Departments = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre *
+                  Nombre del Departamento *
                 </label>
                 <input
                   type="text"
@@ -291,19 +402,6 @@ const Departments = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   placeholder="Ej: Cardiología"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descripción
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none"
-                  placeholder="Descripción del departamento..."
                 />
               </div>
 
@@ -324,7 +422,8 @@ const Departments = () => {
                   Cancelar
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleSubmit}
                   className="flex-1 px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
                   disabled={submitting}
                 >
@@ -338,7 +437,115 @@ const Departments = () => {
                   )}
                 </button>
               </div>
-            </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Asignar Jefe de Departamento */}
+      {showHeadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Asignar Jefe de Departamento
+                </h2>
+                <button
+                  onClick={() => setShowHeadModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-gray-600 mt-2">
+                {selectedDepartment?.name}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Buscador de Doctores */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Buscar Doctor
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    value={doctorSearchTerm}
+                    onChange={(e) => setDoctorSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    placeholder="Buscar por nombre o identificación..."
+                  />
+                </div>
+              </div>
+
+              {/* Lista de Doctores */}
+              <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
+                {filteredDoctors.length > 0 ? (
+                  filteredDoctors.map((doctor) => (
+                    <button
+                      key={doctor.employeeId}
+                      onClick={() => setSelectedDoctor(doctor)}
+                      className={`w-full text-left px-4 py-3 hover:bg-cyan-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                        selectedDoctor?.employeeId === doctor.employeeId
+                          ? 'bg-cyan-100 border-l-4 border-l-cyan-600'
+                          : ''
+                      }`}
+                    >
+                      <div className="font-medium text-gray-900">{doctor.name}</div>
+                      <div className="text-sm text-gray-500">ID: {doctor.identification}</div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-gray-500">
+                    {doctorSearchTerm ? 'No se encontraron doctores' : 'No hay doctores en este departamento'}
+                  </div>
+                )}
+              </div>
+
+              {selectedDoctor && (
+                <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-lg">
+                  <p className="text-sm text-cyan-800">
+                    <strong>Seleccionado:</strong> {selectedDoctor.name}
+                  </p>
+                </div>
+              )}
+
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="text-red-600 w-5 h-5 flex-shrink-0" />
+                  <p className="text-red-800 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowHeadModal(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                  disabled={submitting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAssignDepartmentHead}
+                  className="flex-1 px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  disabled={submitting || !selectedDoctor}
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Asignando...
+                    </>
+                  ) : (
+                    'Asignar Jefe'
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
