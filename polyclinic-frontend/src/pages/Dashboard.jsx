@@ -130,12 +130,12 @@ const Dashboard = () => {
       ]
     },
     {
-    id: "staff",
-    modes: [
-      { id: "doctor", name: "Doctores" },
-      { id: "nurse", name: "Enfermeros" }
-    ]
-  },
+      id: "staff",
+      modes: [
+        { id: "doctor", name: "Doctores" },
+        { id: "nurse", name: "Enfermeros" }
+      ]
+    },
   ];
 
   const handleItemClick = (itemId) => {
@@ -152,15 +152,6 @@ const Dashboard = () => {
     }
   };
 
-  // Debug: muestra cambios de location y selectedMode
-  useEffect(() => {
-    console.log("DEBUG: location changed:", location.pathname, location.search);
-  }, [location.pathname, location.search]);
-
-  useEffect(() => {
-    console.log("DEBUG: selectedMode changed:", selectedMode);
-  }, [selectedMode]);
-
   const handleModeSelect = (itemId, modeId) => {
     if (itemId === 'staff') {
       navigate(`/employees?type=${modeId}`);
@@ -175,11 +166,10 @@ const Dashboard = () => {
     setActiveItem(null);
   };
 
-
   // Cerrar submenú al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (activeItem && !event.target.closest('.sidebar-nav') && !event.target.closest('.submenu-container')) {
+      if (activeItem && !event.target.closest('.sidebar-nav')) {
         setActiveItem(null);
       }
     };
@@ -221,7 +211,6 @@ const Dashboard = () => {
 
       switch (mode.id) {
         case "referral":
-          console.log("Rendering ConsultationsReferral");
           return <ConsultationsReferral />;
         default:
           return (
@@ -265,7 +254,6 @@ const Dashboard = () => {
             </div>
           );
         }
-        // Si hay modo seleccionado, se renderiza en el switch principal
         break;
       case "emergency":
         return (
@@ -393,48 +381,29 @@ const Dashboard = () => {
                   )}
                 </button>
 
-                {/* Submenú: inline para 'staff', panel lateral para el resto */}
+                {/* Submenú inline para todos los módulos con submenú */}
                 {sidebarOpen && hasSubmenu && isSubmenuOpen && (
-                  module.id === 'staff' ? (
-                    <div
-                      className="mt-2 pl-10 pr-4 space-y-1"
-                      role="menu"
-                      aria-labelledby={`menu-${module.id}`}
-                    >
-                      {hasSubmenu.modes.map((mode) => (
-                        <button
-                          key={mode.id}
-                          onClick={() => handleModeSelect(module.id, mode.id)}
-                          className={`w-full text-left px-4 py-2 rounded-lg hover:bg-cyan-50 transition ${
-                            selectedMode?.itemId === module.id && selectedMode?.modeId === mode.id
-                              ? "bg-cyan-100 text-cyan-700 font-semibold"
-                              : "text-gray-700"
-                          }`}
-                          role="menuitem"
-                        >
-                          {mode.name}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="submenu-container absolute left-full top-0 ml-2 bg-white shadow-xl rounded-lg border border-gray-200 z-40 min-w-[240px]">
-                      {hasSubmenu.modes.map((mode) => (
-                        <button
-                          key={mode.id}
-                          onClick={() => handleModeSelect(module.id, mode.id)}
-                          className={`w-full px-4 py-3 text-left hover:bg-cyan-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                            selectedMode?.itemId === module.id && selectedMode?.modeId === mode.id
-                              ? "bg-cyan-100 text-cyan-700 font-semibold"
-                              : "text-gray-700 border-b border-gray-200"
-                          }`}
-                        >
-                          {mode.name}
-                        </button>
-                      ))}
-                    </div>
-                  )
+                  <div
+                    className="mt-2 pl-10 pr-4 space-y-1"
+                    role="menu"
+                    aria-labelledby={`menu-${module.id}`}
+                  >
+                    {hasSubmenu.modes.map((mode) => (
+                      <button
+                        key={mode.id}
+                        onClick={() => handleModeSelect(module.id, mode.id)}
+                        className={`w-full text-left px-4 py-2 rounded-lg hover:bg-cyan-50 transition ${
+                          selectedMode?.itemId === module.id && selectedMode?.modeId === mode.id
+                            ? "bg-cyan-100 text-cyan-700 font-semibold"
+                            : "text-gray-700"
+                        }`}
+                        role="menuitem"
+                      >
+                        {mode.name}
+                      </button>
+                    ))}
+                  </div>
                 )}
-
               </div>
             );
           })}

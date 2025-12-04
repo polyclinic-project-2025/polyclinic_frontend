@@ -320,10 +320,10 @@ const Employees = ({ type }) => {
 
             <div className="space-y-2 text-sm">
               {type === 'doctor' && employee.departmentId && (
-                <p className="text-sm text-gray-500 flex items-center gap-1 mb-2">
+                <div className="flex items-center gap-2 text-gray-600">
                   <Building2 className="w-4 h-4" />
-                  {getDepartmentName(employee.departmentId)}
-                </p>
+                  <span>{getDepartmentName(employee.departmentId)}</span>
+                </div>
               )}
               <div className="flex items-center gap-2 text-gray-600">
                 <IdCard className="w-4 h-4" />
