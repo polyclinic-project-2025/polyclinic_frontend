@@ -412,7 +412,6 @@ const Employees = ({ type }) => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   >
                     <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
                     <option value="Licencia">Licencia</option>
                     <option value="Vacaciones">Vacaciones</option>
                   </select>
@@ -437,24 +436,6 @@ const Employees = ({ type }) => {
                         </option>
                       ))}
                     </select>
-                  </div>
-                )}
-
-                {/* Dropdown de Nursing (solo para enfermeros - futuro) */}
-                {currentConfig.useNursing && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Área de Enfermería *
-                    </label>
-                    <input
-                      type="text"
-                      disabled
-                      value="Pendiente de implementación"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      La tabla Nursing aún no está implementada
-                    </p>
                   </div>
                 )}
               </div>
