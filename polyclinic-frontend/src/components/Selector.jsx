@@ -101,10 +101,8 @@ const GenericSelector = ({
       switch (method) {
         case "getDoctors":
           if (methodParams) {
-            data = await service.getDoctors(methodParams);
-          } else {
-            data = await service.getDoctors();
-          }
+            data = await service.getDoctorsByDepartment(methodParams);
+          } 
           break;
         default:
           data = await service.getAll();

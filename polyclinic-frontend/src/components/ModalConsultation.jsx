@@ -5,7 +5,7 @@ import Selector from "./Selector";
 import CustomDatePicker from "./CustmonDatePicker";
 import { departmentService } from "../services/departmentService";
 import { referralService } from "../services/referralService";
-import { departmentHedService } from "../services/departmentHeadService";
+import { departmentHeadService } from "../services/departmentHeadService";
 
 const ModalConsultation = ({
   isOpen,
@@ -117,7 +117,7 @@ const ModalConsultation = ({
   const getDepartmentHeadId = async (departmentId) => {
     
     try {
-        const departmentHeads = await departmentHedService.getAll();
+        const departmentHeads = await departmentHeadService.getAll();
         const foundDepartmentHead = departmentHeads.find(head => 
         head.departmentId === formData.departmentId);
         var result = foundDepartmentHead.departmentHeadId;
