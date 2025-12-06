@@ -66,7 +66,15 @@ const RecentConsultationsWidget = ({service}) => {
               <div className="flex items-center gap-3 text-xs text-gray-600 mt-0.5">
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  <span>{new Date(consult.dateTimeCRem).toLocaleDateString("es-ES")}</span>
+                  <span>{new Date(consult.dateTimeCRem).toLocaleDateString(
+                      "es-ES",
+                      {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        timeZone: "UTC", // <--- FUERZA la visualización en UTC
+                      }
+                    )}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Stethoscope className="w-3 h-3" />

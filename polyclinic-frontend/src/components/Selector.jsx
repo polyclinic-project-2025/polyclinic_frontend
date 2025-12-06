@@ -5,11 +5,13 @@ import { Search, ChevronDown, X } from "lucide-react";
 const GenericSelector = ({
   service,
   method,
+  methodParams, // NUEVO: parámetros para el método
   selected,
   onSelect,
   getDisplayText,
   getSearchableText,
   renderItem,
+  getItemId, // NUEVO: función para obtener el ID único de cada item
   icon: Icon,
   label = "Seleccionar",
   placeholder = "Buscar y seleccionar...",
@@ -25,21 +27,60 @@ const GenericSelector = ({
 
   const dropdownRef = useRef(null);
 
+  // Recargar items cuando cambian los parámetros del método
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [methodParams]);
 
-  // Click outside (más robusto)
+  // Click outside (mejorado para no cerrar en scrollbar)
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // No cerrar si el clic es dentro del dropdown
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
+        // Verificar si el clic fue en un scrollbar o en elementos con scroll
+        const clickedElement = event.target;
+        
+        // Verificar si es un clic en el scrollbar
+        const isScrollbarClick = 
+          event.clientX >= document.documentElement.clientWidth - 20 ||
+          event.clientY >= document.documentElement.clientHeight - 20;
+        
+        // Verificar si el elemento clickeado tiene overflow
+        const hasOverflow = (element) => {
+          if (!element) return false;
+          const style = window.getComputedStyle(element);
+          return style.overflowY === 'auto' || style.overflowY === 'scroll' || 
+                 style.overflowX === 'auto' || style.overflowX === 'scroll';
+        };
+        
+        // Buscar si algún padre tiene scroll
+        let parent = clickedElement;
+        let isInScrollableArea = false;
+        while (parent && parent !== document.body) {
+          if (hasOverflow(parent)) {
+            const rect = parent.getBoundingClientRect();
+            // Verificar si el clic está en el área del scrollbar
+            if (event.clientX > rect.right - 20 || event.clientY > rect.bottom - 20) {
+              isInScrollableArea = true;
+              break;
+            }
+          }
+          parent = parent.parentElement;
+        }
+        
+        // No cerrar si fue clic en scrollbar o área scrollable
+        if (!isScrollbarClick && !isInScrollableArea) {
+          setIsOpen(false);
+        }
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
@@ -59,7 +100,11 @@ const GenericSelector = ({
       let data = null;
       switch (method) {
         case "getDoctors":
-          data = await service.getDoctors();
+          if (methodParams) {
+            data = await service.getDoctors(methodParams);
+          } else {
+            data = await service.getDoctors();
+          }
           break;
         default:
           data = await service.getAll();
@@ -71,6 +116,8 @@ const GenericSelector = ({
       setFilteredItems(finalData);
     } catch (error) {
       console.error("Error al cargar datos:", error);
+      setItems([]);
+      setFilteredItems([]);
     } finally {
       setLoading(false);
     }
@@ -86,6 +133,21 @@ const GenericSelector = ({
     e.stopPropagation();
     onSelect(null);
     setSearchTerm("");
+  };
+
+  // Función auxiliar para obtener ID del item
+  const getItemKey = (item) => {
+    if (getItemId) {
+      return getItemId(item);
+    }
+    // Fallback: intenta varias propiedades comunes
+    return item.id || item.employeeId || item.departmentId || item.referralId || item.patientId || JSON.stringify(item);
+  };
+
+  // Función para verificar si un item está seleccionado
+  const isItemSelected = (item) => {
+    if (!selected) return false;
+    return getItemKey(item) === getItemKey(selected);
   };
 
   return (
@@ -141,9 +203,9 @@ const GenericSelector = ({
 
         {/* Dropdown */}
         {isOpen && (
-          <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl">
+          <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
             {/* Barra de búsqueda */}
-            <div className="p-3 border-b border-gray-200 bg-gray-50">
+            <div className="p-3 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -159,7 +221,7 @@ const GenericSelector = ({
               </div>
             </div>
 
-            <div className="overflow-y-auto max-h-20">
+            <div className="overflow-y-auto max-h-60 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
               {loading ? (
                 <div className="p-4 text-center text-gray-500">Cargando...</div>
               ) : filteredItems.length === 0 ? (
@@ -171,13 +233,13 @@ const GenericSelector = ({
               ) : (
                 filteredItems.map((item) => (
                   <button
-                    key={item.id}
+                    key={getItemKey(item)}
                     type="button"
                     onClick={() => handleSelectItem(item)}
-                    className={`w-full px-4 py-3 text-left hover:bg-cyan-50 transition-colors flex items-center gap-3
-              ${selected?.id === item.id ? "bg-cyan-100" : ""}`}
+                    className={`w-full px-4 py-3 text-left hover:bg-cyan-50 transition-colors flex items-center gap-3 border-b border-gray-100 last:border-b-0
+              ${isItemSelected(item) ? "bg-cyan-100" : ""}`}
                   >
-                    {renderItem(item, selected?.id === item.id)}
+                    {renderItem(item, isItemSelected(item))}
                   </button>
                 ))
               )}
