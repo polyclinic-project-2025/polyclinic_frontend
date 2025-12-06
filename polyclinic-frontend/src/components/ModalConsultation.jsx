@@ -16,7 +16,7 @@ const ModalConsultation = ({
 }) => {
   const initialData = {
     patientId: "",
-    dateTime: "",
+    dateTime: new Date(),
     departmentId: "",
     doctorId: "",
     diagnostic: "",
@@ -32,25 +32,66 @@ const ModalConsultation = ({
 
   // Cargar datos cuando se abre en modo edición
   useEffect(() => {
-    
-    if (isOpen && modalMode === "edit" && selected) {
-      const dateForPicker = new Date(selected.dateTimeCRem).toISOString();
+    const loadEditData = async () => {
+      if (isOpen && modalMode === "edit" && selected) {
+        const dateForPicker = new Date(selected.dateTimeCRem).toISOString();
 
-      const editFormData = {
-        patientId: selected.referralId,
-        patient: selected.patientFullName,
-        dateTime: dateForPicker,
-        departmentId: "",
-        department: "" ,
-        doctorId: selected.doctorId,
-        doctor: selected.doctorFullName,
-        diagnostic: selected.diagnosis,
-      };
-      
-      setFormData(editFormData);
-    } else if (isOpen && modalMode === "create") {
-      setFormData(initialData);
-    }
+        // Cargar datos de departamento y doctor para los selectores
+        let departmentData = null;
+        let doctorData = null;
+
+        try {
+          // Obtener el departamento del doctor
+          if (selected.doctorId) {
+            const departments = await departmentService.getAll();
+            
+            // Buscar el departamento que contiene a este doctor
+            for (const dept of departments) {
+              const doctors = await departmentService.getDoctors(dept.departmentId);
+              const doctorFound = doctors.find(d => d.employeeId === selected.doctorId);
+              
+              if (doctorFound) {
+                departmentData = {
+                  id: dept.departmentId,
+                  departmentId: dept.departmentId,
+                  name: dept.name
+                };
+                doctorData = {
+                  id: doctorFound.employeeId,
+                  employeeId: doctorFound.employeeId,
+                  name: doctorFound.name
+                };
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error cargando datos de edición:", error);
+        }
+
+        const editFormData = {
+          patientId: selected.referralId,
+          patient: {
+            id: selected.referralId,
+            referralId: selected.referralId,
+            patientName: selected.patientFullName,
+            name: selected.patientFullName
+          },
+          dateTime: dateForPicker,
+          departmentId: departmentData?.departmentId || "",
+          department: departmentData,
+          doctorId: selected.doctorId,
+          doctor: doctorData,
+          diagnostic: selected.diagnosis,
+        };
+        
+        setFormData(editFormData);
+      } else if (isOpen && modalMode === "create") {
+        setFormData(initialData);
+      }
+    };
+
+    loadEditData();
   }, [isOpen, modalMode, selected]);
 
   const handleClose = () => {
@@ -62,10 +103,9 @@ const ModalConsultation = ({
 
   // Manejar cambio de departamento y resetear doctor
   const handleDepartmentChange = (department) => {
-    
     const updatedFormData = { 
       ...formData, 
-      department: department.name,
+      department: department,
       departmentId: department?.departmentId || "",
       doctor: null,
       doctorId: "" 
@@ -95,15 +135,15 @@ const ModalConsultation = ({
 
     try {
       
-      if (!formData.patient?.id && !formData.patientId) {
+      if (!formData.patient?.referralId && !formData.patientId) {
         throw new Error("Debe seleccionar un paciente");
       }
 
-      if (!formData.doctor?.id && !formData.doctorId) {
+      if (!formData.doctor?.employeeId && !formData.doctorId) {
         throw new Error("Debe seleccionar un doctor");
       }
 
-      if (!formData.department?.id && !formData.departmentId) {
+      if (!formData.department?.departmentId && !formData.departmentId) {
         throw new Error("Debe seleccionar un departamento");
       }
 
@@ -127,18 +167,18 @@ const ModalConsultation = ({
       console.log("dataToSend: ", dataToSend)
 
       if (modalMode === "create") {
-        const response = await consultationReferralService.create(dataToSend);
+        await consultationReferralService.create(dataToSend);
         setSuccess("Consulta agregada exitosamente");
       } else if (selected != null) {
-        const response = await consultationReferralService.update(selected.consultationReferralId, dataToSend);
+        await consultationReferralService.update(selected.consultationReferralId, dataToSend);
         setSuccess("Consulta actualizada exitosamente");
       }
       
-      loadConsultations();
-      
+      // Cerrar el modal inmediatamente y luego recargar
       setTimeout(() => {
         handleClose();
-      }, 1500);
+        loadConsultations();
+      }, 800);
     } catch (err) {
       const errorMessage = err.message || "Error al guardar consulta";
       setError(errorMessage);
@@ -151,7 +191,7 @@ const ModalConsultation = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           handleClose();
@@ -159,10 +199,10 @@ const ModalConsultation = ({
       }}
     >
       <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-gray-200 bg-white rounded-t-2xl sticky top-0 z-10">
+        <div className="p-6 border-b border-gray-200 bg-white rounded-t-2xl">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">
               {modalMode === "create" ? "Nueva Consulta" : "Editar Consulta"}
@@ -176,7 +216,7 @@ const ModalConsultation = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[calc(90vh-120px)] overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -212,7 +252,7 @@ const ModalConsultation = ({
               onSelect={(patient) => {
                 const updatedData = { 
                   ...formData, 
-                  patient : patient.patientName,
+                  patient: patient,
                   patientId: patient?.referralId
                 };
                 setFormData(updatedData);
@@ -220,6 +260,7 @@ const ModalConsultation = ({
               label="Paciente"
               placeholder="Selecciona un paciente"
               required={true}
+              getItemId={(item) => item?.referralId || item?.id}
               getDisplayText={(item) => item?.patientName || item?.name || ''}
               getSearchableText={(item) => {
                 const searchText = [
@@ -252,6 +293,7 @@ const ModalConsultation = ({
               label="Departamento"
               placeholder="Selecciona un departamento"
               required={true}
+              getItemId={(item) => item?.departmentId || item?.id}
               getDisplayText={(item) => item?.name || ''}
               getSearchableText={(item) => item?.name || ''}
               renderItem={(item, isSelected) => (
@@ -271,7 +313,7 @@ const ModalConsultation = ({
                 onSelect={(doctor) => {
                   const updatedData = { 
                     ...formData, 
-                    doctor : doctor.name,
+                    doctor: doctor,
                     doctorId: doctor?.employeeId || ""
                   };
                   setFormData(updatedData);
@@ -279,6 +321,7 @@ const ModalConsultation = ({
                 label="Doctor"
                 placeholder="Selecciona un doctor"
                 required={true}
+                getItemId={(item) => item?.employeeId || item?.id}
                 getDisplayText={(item) => item?.name || ''}
                 getSearchableText={(item) => item?.name || ''}
                 renderItem={(item, isSelected) => (
@@ -312,34 +355,35 @@ const ModalConsultation = ({
               <p className="text-green-800 text-sm">{success}</p>
             </div>
           )}
-
-          <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-4 border-t mt-6">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-              disabled={submitting}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
-              disabled={submitting}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Guardando...
-                </>
-              ) : modalMode === "create" ? (
-                "Crear"
-              ) : (
-                "Actualizar"
-              )}
-            </button>
-          </div>
         </form>
+
+        <div className="flex gap-3 p-6 pt-4 bg-white border-t rounded-b-2xl">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+            disabled={submitting}
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            className="flex-1 px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+            disabled={submitting}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Guardando...
+              </>
+            ) : modalMode === "create" ? (
+              "Crear"
+            ) : (
+              "Actualizar"
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
