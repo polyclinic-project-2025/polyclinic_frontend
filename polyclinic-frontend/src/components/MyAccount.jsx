@@ -6,6 +6,7 @@ import {
     Check,
     X,
     Plus,
+    Minus,
  } from 'lucide-react';
 import { useAuth } from "../context/AuthContext";
 import { roleTranslations } from "../pages/Dashboard";
@@ -109,6 +110,35 @@ const MyAccount = ({ isOpen, onClose }) => {
         }
     };
 
+    const handleRemoveRole = async (roleToRemove) => {
+        if (!window.confirm(`¿Estás seguro de eliminar el rol ${roleTranslations[roleToRemove] || roleToRemove}?`)) {
+            return;
+        }
+
+        try {
+            await userService.patch(user.id, {
+                property: "Roles",
+                operation: "remove",
+                roles: [roleToRemove]
+            });
+            
+            const updatedRoles = user.roles.filter(role => role !== roleToRemove);
+            updateUser({ roles: updatedRoles });
+            
+            setAlert({
+                type: 'success',
+                message: `Rol ${roleTranslations[roleToRemove] || roleToRemove} eliminado correctamente`
+            });
+        } catch (error) {
+            console.error("Error al eliminar rol:", error);
+            const errorMessage = error.message || 'Error al eliminar rol';
+            setAlert({
+                type: 'error',
+                message: errorMessage
+            });
+        }
+    };
+
     if (!isOpen) return null;
     
     return (
@@ -139,21 +169,28 @@ const MyAccount = ({ isOpen, onClose }) => {
                 {user?.email ? user.email.split('@')[0] : "Usuario"}
                 </h2>
 
-                {/* Roles con botón para agregar */}
+                {/* Roles con botón para agregar/eliminar */}
                 {user?.roles && user.roles.length > 0 && (
                 <div className="flex flex-wrap gap-2 justify-center items-center">
                     {user.roles.map((role) => (
-                    <span
-                        key={role}
-                        className="px-4 py-1.5 bg-cyan-100 text-cyan-700 rounded-full text-sm font-medium"
-                    >
-                        {roleTranslations[role] || role}
-                    </span>
+                    <div key={role} className="flex items-center gap-1 px-4 py-1.5 bg-cyan-100 text-cyan-700 rounded-full text-sm font-medium">
+                        <span>{roleTranslations[role] || role}</span>
+                        {user.roles.includes('Admin') && (
+                            <button
+                                onClick={() => handleRemoveRole(role)}
+                                className="ml-1 hover:bg-cyan-200 rounded-full p-0.5 transition"
+                                title="Eliminar rol"
+                            >
+                                <Minus className="w-3 h-3"/>
+                            </button>
+                        )}
+                    </div>
                     ))}
-                    {!isEditingRoles && (
+                    {!isEditingRoles && user.roles.includes('Admin') && (
                         <button
                             onClick={() => setIsEditingRoles(true)}
                             className="p-1.5 hover:bg-cyan-50 rounded-full transition"
+                            title="Agregar rol"
                         >
                             <Plus className="w-5 h-5 text-cyan-600"/>
                         </button>

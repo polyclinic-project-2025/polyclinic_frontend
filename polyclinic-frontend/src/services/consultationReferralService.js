@@ -77,6 +77,7 @@ export const consultationReferralService = {
       return response.data;
     } catch (error) {
       console.error('Error al crear consulta:', error);
+      console.error(error.response);
       const errorMessage = error.response?.data?.errorMessage || 'Error al crear consulta';
       throw new Error(errorMessage);
     }
