@@ -118,4 +118,44 @@ export const userService = {
       throw new Error(errorMessage);
     }
   },
+
+  /**
+   * Obtiene el tipo de perfil vinculado a un usuario
+   * @param {string} id - ID del usuario
+   * @returns {Promise<string>} - "Doctor" | "Nurse" | "WarehouseManager" | "Patient"
+   */
+  getProfileType: async (id) => {
+    try {
+      const response = await api.get(`/User/${id}/profile/type`);
+      
+      if (response.data.profileType) {
+        return response.data.profileType;
+      } else {
+        throw new Error('Error al obtener el tipo de perfil');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data || error.message || 'Error al obtener el tipo de perfil';
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Obtiene el perfil completo vinculado a un usuario
+   * @param {string} id - ID del usuario
+   * @returns {Promise<Object>} - UserProfileResponse con userId, profileType y profile
+   */
+  getProfile: async (id) => {
+    try {
+      const response = await api.get(`/User/${id}/profile`);
+      
+      if (response.data.isSuccess) {
+        return response.data.value;
+      } else {
+        throw new Error(response.data.errorMessage || 'Error al obtener el perfil');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.errorMessage || error.message || 'Error al obtener el perfil';
+      throw new Error(errorMessage);
+    }
+  },
 };

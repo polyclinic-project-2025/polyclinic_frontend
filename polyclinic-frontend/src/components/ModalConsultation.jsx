@@ -5,7 +5,10 @@ import Selector from "./Selector";
 import CustomDatePicker from "./CustmonDatePicker";
 import { departmentService } from "../services/departmentService";
 import { referralService } from "../services/referralService";
-import { departmentHedService } from "../services/departmentHeadService";
+import { employeeService } from "../services/employeeService.js";
+import { departmentHeadService } from "../services/departmentHeadService";
+import { userService } from "../services/userService";
+import { useAuth } from "../context/AuthContext";
 
 const ModalConsultation = ({
   isOpen,
@@ -14,6 +17,7 @@ const ModalConsultation = ({
   modalMode,
   selected = null,
 }) => {
+  const { user } = useAuth();
   const initialData = {
     patientId: "",
     dateTime: new Date(),
@@ -29,11 +33,13 @@ const ModalConsultation = ({
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState("");
+  const [loadingDepartment, setLoadingDepartment] = useState(false);
 
-  // Cargar datos cuando se abre en modo edición
+  // Cargar datos cuando se abre en modo edición o creación
   useEffect(() => {
-    const loadEditData = async () => {
+    const loadData = async () => {
       if (isOpen && modalMode === "edit" && selected) {
+        setLoadingDepartment(true);
         const dateForPicker = new Date(selected.dateTimeCRem).toISOString();
 
         // Cargar datos de departamento y doctor para los selectores
@@ -41,32 +47,31 @@ const ModalConsultation = ({
         let doctorData = null;
 
         try {
-          // Obtener el departamento del doctor
-          if (selected.doctorId) {
-            const departments = await departmentService.getAll();
-            
-            // Buscar el departamento que contiene a este doctor
-            for (const dept of departments) {
-              const doctors = await departmentService.getDoctors(dept.departmentId);
-              const doctorFound = doctors.find(d => d.employeeId === selected.doctorId);
-              
-              if (doctorFound) {
-                departmentData = {
-                  id: dept.departmentId,
-                  departmentId: dept.departmentId,
-                  name: dept.name
-                };
-                doctorData = {
-                  id: doctorFound.employeeId,
-                  employeeId: doctorFound.employeeId,
-                  name: doctorFound.name
-                };
-                break;
-              }
-            }
+          const departmentHeadId = selected.departmentHeadId;
+          const head = await departmentHeadService.getById(departmentHeadId);
+          const departmentId = head.departmentId;
+          console.log(departmentId + " is departmentId");
+          
+
+          departmentData = 
+          {
+            departmentId: departmentId,
+            name: selected.departmentName
           }
+          
+          const doctorId = selected.doctorId;
+          const doctor = await employeeService.getById("doctor", doctorId);
+
+          doctorData =
+          {
+            employeeId: doctorId,
+            name: doctor.name
+          }
+
         } catch (error) {
           console.error("Error cargando datos de edición:", error);
+        } finally {
+          setLoadingDepartment(false);
         }
 
         const editFormData = {
@@ -84,15 +89,42 @@ const ModalConsultation = ({
           doctor: doctorData,
           diagnostic: selected.diagnosis,
         };
+        console.log(editFormData.deparmentId + " editFormData");
+        
         
         setFormData(editFormData);
+      } else if (isOpen && modalMode === "create" && user?.id) {
+        setLoadingDepartment(true);
+        try {
+          const profile = await userService.getProfile(user.id);
+          
+          if (profile?.profile?.departmentId) {
+            const departmentId = profile.profile.departmentId;
+            
+            // Buscar el departamento completo
+            const departments = await departmentService.getAll();
+            const userDepartment = departments.find(d => d.departmentId === departmentId);
+            
+            if (userDepartment) {
+              setFormData(prev => ({
+                ...prev,
+                departmentId: departmentId,
+                department: userDepartment
+              }));
+            }
+          }
+        } catch (error) {
+          console.error("Error cargando departamento del usuario:", error);
+        } finally {
+          setLoadingDepartment(false);
+        }
       } else if (isOpen && modalMode === "create") {
         setFormData(initialData);
       }
     };
 
-    loadEditData();
-  }, [isOpen, modalMode, selected]);
+    loadData();
+  }, [isOpen, modalMode, selected, user]);
 
   const handleClose = () => {
     setFormData(initialData);
@@ -101,23 +133,10 @@ const ModalConsultation = ({
     onClose();
   };
 
-  // Manejar cambio de departamento y resetear doctor
-  const handleDepartmentChange = (department) => {
-    const updatedFormData = { 
-      ...formData, 
-      department: department,
-      departmentId: department?.departmentId || "",
-      doctor: null,
-      doctorId: "" 
-    };
-    
-    setFormData(updatedFormData);
-  };
-
   const getDepartmentHeadId = async (departmentId) => {
     
     try {
-        const departmentHeads = await departmentHedService.getAll();
+        const departmentHeads = await departmentHeadService.getAll();
         const foundDepartmentHead = departmentHeads.find(head => 
         head.departmentId === formData.departmentId);
         var result = foundDepartmentHead.departmentHeadId;
@@ -286,14 +305,42 @@ const ModalConsultation = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Selector
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Departamento <span className="text-red-500">*</span>
+              </label>
+              {loadingDepartment ? (
+                <div className="bg-cyan-50 rounded-lg border border-gray-300 px-4 py-3 w-full flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-cyan-600" />
+                </div>
+              ) : formData.department ? (
+                <div className="bg-cyan-50 rounded-lg border border-cyan-300 px-4 py-3 w-full text-gray-700 font-medium">
+                  {formData.department.name}
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg border border-gray-300 px-4 py-3 w-full text-gray-400">
+                  Cargando departamento...
+                </div>
+              )}
+            </div>
+
+            <Selector 
               service={departmentService}
-              selected={formData.department}
-              onSelect={handleDepartmentChange}
-              label="Departamento"
-              placeholder="Selecciona un departamento"
+              method="getDoctors"
+              methodParams={formData.departmentId}
+              selected={formData.doctor}
+              onSelect={(doctor) => {
+                const updatedData = { 
+                  ...formData, 
+                  doctor: doctor,
+                  doctorId: doctor?.employeeId || ""
+                };
+                setFormData(updatedData);
+              }}
+              label="Doctor"
+              placeholder="Selecciona un doctor"
               required={true}
-              getItemId={(item) => item?.departmentId || item?.id}
+              getItemId={(item) => item?.employeeId}
               getDisplayText={(item) => item?.name || ''}
               getSearchableText={(item) => item?.name || ''}
               renderItem={(item, isSelected) => (
@@ -302,44 +349,6 @@ const ModalConsultation = ({
                 </span>
               )}
             />
-            
-            {formData.departmentId ? (
-              <Selector
-                key={formData.departmentId} 
-                service={departmentService}
-                method="getDoctors"
-                methodParams={formData.departmentId}
-                selected={formData.doctor}
-                onSelect={(doctor) => {
-                  const updatedData = { 
-                    ...formData, 
-                    doctor: doctor,
-                    doctorId: doctor?.employeeId || ""
-                  };
-                  setFormData(updatedData);
-                }}
-                label="Doctor"
-                placeholder="Selecciona un doctor"
-                required={true}
-                getItemId={(item) => item?.employeeId || item?.id}
-                getDisplayText={(item) => item?.name || ''}
-                getSearchableText={(item) => item?.name || ''}
-                renderItem={(item, isSelected) => (
-                  <span className={isSelected ? 'font-semibold' : ''}>
-                    {item.name}
-                  </span>
-                )}
-              />
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Doctor <span className="text-red-500">*</span>
-                </label>
-                <div className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-400 flex items-center justify-center">
-                  <span>Primero selecciona un departamento</span>
-                </div>
-              </div>
-            )}
           </div>
 
           {error && (
