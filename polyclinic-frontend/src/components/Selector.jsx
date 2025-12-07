@@ -5,13 +5,13 @@ import { Search, ChevronDown, X } from "lucide-react";
 const GenericSelector = ({
   service,
   method,
-  methodParams, // NUEVO: parámetros para el método
+  methodParams,
   selected,
   onSelect,
   getDisplayText,
   getSearchableText,
   renderItem,
-  getItemId, // NUEVO: función para obtener el ID único de cada item
+  getItemId,
   icon: Icon,
   label = "Seleccionar",
   placeholder = "Buscar y seleccionar...",
@@ -29,8 +29,16 @@ const GenericSelector = ({
 
   // Recargar items cuando cambian los parámetros del método
   useEffect(() => {
-    loadItems();
-  }, [methodParams]);
+    if (method === "getDoctors") {
+      // Solo cargar si hay methodParams para getDoctors
+      if (methodParams) {
+        loadItems();
+      }
+    } else {
+      // Para otros casos (sin method), cargar siempre
+      loadItems();
+    }
+  }, [methodParams, method]);
 
   // Click outside (mejorado para no cerrar en scrollbar)
   useEffect(() => {
@@ -84,9 +92,9 @@ const GenericSelector = ({
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
-      setFilteredItems(items);
+      setFilteredItems(items || []);
     } else {
-      const filtered = items.filter((item) =>
+      const filtered = (items || []).filter((item) =>
         getSearchableText(item).toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredItems(filtered);
@@ -110,8 +118,8 @@ const GenericSelector = ({
       }
 
       const finalData = filterData ? filterData(data) : data;
-      setItems(finalData);
-      setFilteredItems(finalData);
+      setItems(finalData || []);
+      setFilteredItems(finalData || []);
     } catch (error) {
       console.error("Error al cargar datos:", error);
       setItems([]);
@@ -222,14 +230,14 @@ const GenericSelector = ({
             <div className="overflow-y-auto max-h-60 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
               {loading ? (
                 <div className="p-4 text-center text-gray-500">Cargando...</div>
-              ) : filteredItems.length === 0 ? (
+              ) : (filteredItems || []).length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   {searchTerm
                     ? "No se encontraron resultados"
                     : "No hay datos disponibles"}
                 </div>
               ) : (
-                filteredItems.map((item) => (
+                (filteredItems || []).map((item) => (
                   <button
                     key={getItemKey(item)}
                     type="button"
