@@ -92,11 +92,15 @@ const ModalConsultation = ({
         console.log(editFormData.deparmentId + " editFormData");
         
         
+        
         setFormData(editFormData);
       } else if (isOpen && modalMode === "create" && user?.id) {
+        
         setLoadingDepartment(true);
         try {
           const profile = await userService.getProfile(user.id);
+          console.log("profile: ", profile);
+          
           
           if (profile?.profile?.departmentId) {
             const departmentId = profile.profile.departmentId;
@@ -115,6 +119,8 @@ const ModalConsultation = ({
           }
         } catch (error) {
           console.error("Error cargando departamento del usuario:", error);
+          // Si hay error, aún permitir crear la consulta sin departamento precargado
+          setError("");
         } finally {
           setLoadingDepartment(false);
         }
