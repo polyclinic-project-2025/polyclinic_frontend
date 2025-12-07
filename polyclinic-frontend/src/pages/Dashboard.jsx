@@ -13,6 +13,7 @@ import ModalSettings from "../components/ModalSettings";
 import ConsultationsReferral from "./ConsultationsReferral";
 import Employees from "./Employees";
 import Medications from "./Medications";
+import Patients from "./Patients";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -239,12 +240,7 @@ const Dashboard = () => {
       case "departments":
         return <Departments />;
       case "patients":
-        return (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Pacientes en desarrollo</p>
-          </div>
-        );
+        return <Patients />;
       case "consultations":
         if (!selectedMode || selectedMode.itemId !== "consultations") {
           return (

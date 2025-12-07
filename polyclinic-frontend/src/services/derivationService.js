@@ -17,7 +17,7 @@ export const derivationService = {
   /** Obtener derivación por ID */
   getById: async (id) => {
     try {
-      const response = await api.get('/Derivation/${id}');
+      const response = await api.get(`/Derivation/${id}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al obtener derivación';
@@ -28,7 +28,7 @@ export const derivationService = {
   /** Buscar por dpto origen */
   searchByDepartmentFrom: async (name) => {
     try {
-      const response = await api.get('/Derivation/search/from?name=${name}');
+      const response = await api.get(`/Derivation/search/from?name=${name}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar derivaciones por dpto origen';
@@ -39,7 +39,7 @@ export const derivationService = {
   /** Buscar por dpto destino */
   searchByDepartmentTo: async (name) => {
     try {
-      const response = await api.get('/Derivation/search/to?name=${name}');
+      const response = await api.get(`/Derivation/search/to?name=${name}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar derivaciones por dpto destino';
@@ -50,7 +50,7 @@ export const derivationService = {
   /** Buscar por nombre de paciente */
   searchByPatientName: async (name) => {
     try {
-      const response = await api.get('/Derivation/search/patient?name=${name}');
+      const response = await api.get(`/Derivation/search/patient?name=${name}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar derivaciones por paciente';
@@ -61,7 +61,7 @@ export const derivationService = {
   /** Buscar por identificación */
   searchByIdentification: async (identification) => {
     try {
-      const response = await api.get('/Derivation/search/identification?identification=${identification}');
+      const response = await api.get(`/Derivation/search/identification?identification=${identification}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar por identificación';
@@ -72,7 +72,7 @@ export const derivationService = {
   /** Buscar por fecha */
   searchByDate: async (date) => {
     try {
-      const response = await api.get('/Derivation/search/date?date=${date}');
+      const response = await api.get(`/Derivation/search/date?date=${date}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar derivaciones por fecha';
@@ -94,7 +94,7 @@ export const derivationService = {
   /** Eliminar derivación */
   delete: async (id) => {
     try {
-      await api.delete('/Derivation/${id}');
+      await api.delete(`/Derivation/${id}`);
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al eliminar derivación';
       throw new Error(msg);

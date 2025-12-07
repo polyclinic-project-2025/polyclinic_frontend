@@ -17,7 +17,7 @@ export const referralService = {
   /** Obtener remitido por ID */
   getById: async (id) => {
     try {
-      const response = await api.get('/Referral/${id}');
+      const response = await api.get(`/Referral/${id}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al obtener remitido';
@@ -28,7 +28,7 @@ export const referralService = {
   /** Buscar por puesto externo */
   searchByPuestoExterno: async (name) => {
     try {
-      const response = await api.get('/Referral/search/from?name=${name}');
+      const response = await api.get(`/Referral/search/from?name=${name}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por puesto externo';
@@ -39,7 +39,7 @@ export const referralService = {
   /** Buscar por departamento destino */
   searchByDepartmentTo: async (name) => {
     try {
-      const response = await api.get('/Referral/search/to?name=${name}');
+      const response = await api.get(`/Referral/search/to?name=${name}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por dpto destino';
@@ -50,7 +50,7 @@ export const referralService = {
   /** Buscar por nombre de paciente */
   searchByPatientName: async (name) => {
     try {
-      const response = await api.get('/Referral/search/patient?name=${name}');
+      const response = await api.get(`/Referral/search/patient?name=${name}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por paciente';
@@ -61,7 +61,7 @@ export const referralService = {
   /** Buscar por identificación */
   searchByIdentification: async (identification) => {
     try {
-      const response = await api.get('/Referral/search/identification?identification=${identification}');
+      const response = await api.get(`/Referral/search/identification?identification=${identification}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por identificación';
@@ -72,7 +72,7 @@ export const referralService = {
   /** Buscar por fecha */
   searchByDate: async (date) => {
     try {
-      const response = await api.get('/Referral/search/date?date=${date}');
+      const response = await api.get(`/Referral/search/date?date=${date}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por fecha';
@@ -94,7 +94,7 @@ export const referralService = {
   /** Eliminar remitido */
   delete: async (id) => {
     try {
-      await api.delete('/Referral/${id}');
+      await api.delete(`/Referral/${id}`);
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al eliminar remitido';
       throw new Error(msg);
