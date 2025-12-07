@@ -10,6 +10,7 @@ import ModalMedication from '../components/ModalMedication';
 import ModalMedicationDetails from '../components/ModalMedicationDetails';
 
 const Medications = () => {
+  const { hasRole } = useAuth();
   const { can, isAdmin } = usePermissions();
   const [medications, setMedications] = useState([]);
   const [loading, setLoading] = useState(true);
