@@ -89,6 +89,8 @@ const ModalConsultation = ({
           doctor: doctorData,
           diagnostic: selected.diagnosis,
         };
+        console.log(editFormData.deparmentId + " editFormData");
+        
         
         
         setFormData(editFormData);
