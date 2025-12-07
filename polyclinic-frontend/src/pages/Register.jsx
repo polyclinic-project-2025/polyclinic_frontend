@@ -125,7 +125,7 @@ const Register = () => {
             <UserPlus className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Crear Cuenta</h1>
-          <p className="text-gray-600 mt-2">Regístrate en MatComCare Pro</p>
+          <p className="text-gray-600 mt-2">Regístrate en Polyclinic</p>
         </div>
 
         {/* Alert */}
