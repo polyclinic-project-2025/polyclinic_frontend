@@ -12,6 +12,7 @@ import {
   Calendar,
   Stethoscope,
   FileText,
+  Pill,
 } from "lucide-react";
 import { consultationReferralService } from "../services/consultationReferralService";
 import {
@@ -19,18 +20,23 @@ import {
   usePermissions,
 } from "../middleware/PermissionMiddleware";
 import ModalConsultation from "../components/ModalConsultation";
+import ModalMedicationReferral from "../components/ModalMedicationReferral";
 
 import RecentConsultationsWidget from "../components/RecentConsultationsWidget";
 import ConsultationsDateRangeFilter from "../components/ConsultationsDateRangeFilter"; // Usamos la versión V2 corregida
+import medicationReferralService from "../services/medicationReferralService";
 
 const Consultations = () => {
   const { can } = usePermissions();
   const [consultations, setConsultations] = useState([]);
+  const [consultationMedications, setConsultationMedications] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showModalConsultation, setShowModalConsultation] = useState(false);
+  const [showModalMedication, setShowModalMedication] = useState(false);
   const [modalMode, setModalMode] = useState("create");
   const [selectedConsultation, setSelectedConsultation] = useState(null);
+  const [selectedMedicationMode, setSelectedMedicationMode] = useState("create");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -44,11 +50,32 @@ const Consultations = () => {
       const data = await consultationReferralService.getAll();
       console.log("Consultas cargadas:", data); // Para debugging
       setConsultations(data);
+      
+      // Cargar medicamentos para cada consulta
+      await loadAllMedications(data);
     } catch (err) {
       const errorMessage = err.message || "Error al cargar consultas";
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAllMedications = async (consultationsList) => {
+    try {
+      const medicationsMap = {};
+      const allMedications = await medicationReferralService.getAll();
+      
+      consultationsList.forEach(consultation => {
+        const consultId = consultation.consultationReferralId || consultation.id;
+        medicationsMap[consultId] = allMedications.filter(
+          med => med.consultationReferralId === consultId
+        );
+      });
+      
+      setConsultationMedications(medicationsMap);
+    } catch (err) {
+      console.error('Error al cargar medicamentos:', err);
     }
   };
 
@@ -76,6 +103,28 @@ const Consultations = () => {
     setSelectedConsultation(consultation);
     setShowModalConsultation(true);
     setError("");
+  };
+
+  const handleAddMedication = (consultation) => {
+    if (!can("canEditConsultations")) {
+      setError("No tienes permisos para recetar medicamentos");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
+    const consultId = consultation.consultationReferralId || consultation.id;
+    const existingMeds = consultationMedications[consultId] || [];
+    
+    setSelectedConsultation(consultation);
+    setSelectedMedicationMode(existingMeds.length > 0 ? 'edit' : 'create');
+    setShowModalMedication(true);
+    setError("");
+  };
+
+  const handleMedicationSuccess = () => {
+    setSuccess("Medicamentos recetados exitosamente");
+    setTimeout(() => setSuccess(""), 3000);
+    loadConsultations(); // Recargar para actualizar la visualización
   };
 
   // Filtra las consultas (nombres corregidos)
@@ -179,11 +228,16 @@ const Consultations = () => {
 
       {/* Consultations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredConsultations.map((consultation) => (
-          <div
-            key={consultation.id}
-            className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
-          >
+        {filteredConsultations.map((consultation) => {
+          const consultId = consultation.consultationReferralId || consultation.id;
+          const medications = consultationMedications[consultId] || [];
+          const hasMedications = medications.length > 0;
+          
+          return (
+            <div
+              key={consultation.id}
+              className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
+            >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
@@ -195,16 +249,47 @@ const Consultations = () => {
                   </h3>
                 </div>
               </div>
-              <button
-                onClick={() => handleEdit(consultation)}
-                className="hover:scale-110 transition-transform"
-              >
-                <SquarePen className="w-4 h-4 text-cyan-600" />
-              </button>
+              
+              {/* Botones de Acción */}
+              <div className="flex gap-2">
+                <ProtectedComponent requiredPermission="canEditConsultations">
+                  <button
+                    onClick={() => handleAddMedication(consultation)}
+                    className={`p-2 rounded-lg transition ${
+                      hasMedications 
+                        ? 'text-green-600 bg-green-50 hover:bg-green-100' 
+                        : 'text-purple-600 hover:bg-purple-50'
+                    }`}
+                    title={hasMedications ? `Editar Receta (${medications.length} medicamentos)` : "Recetar Medicamentos"}
+                  >
+                    <Pill className="w-4 h-4" />
+                  </button>
+                </ProtectedComponent>
+
+                <ProtectedComponent requiredPermission="canEditConsultations">
+                  <button
+                    onClick={() => handleEdit(consultation)}
+                    className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
+                    title="Editar"
+                  >
+                    <SquarePen className="w-4 h-4" />
+                  </button>
+                </ProtectedComponent>
+              </div>
             </div>
 
             {/* Información de la consulta */}
             <div className="space-y-2">
+              {hasMedications && (
+                <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm text-green-800">
+                    <Pill className="w-4 h-4" />
+                    <span className="font-medium">
+                      {medications.length} medicamento{medications.length !== 1 ? 's' : ''} recetado{medications.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+              )}
               {consultation.departmentName && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Building2 className="w-4 h-4" />
@@ -244,7 +329,8 @@ const Consultations = () => {
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {filteredConsultations.length === 0 && (
@@ -265,6 +351,20 @@ const Consultations = () => {
         loadConsultations={loadConsultations}
         isOpen={showModalConsultation}
         onClose={() => setShowModalConsultation(false)}
+      />
+
+      {/* Modal Medication Referral */}
+      <ModalMedicationReferral
+        show={showModalMedication}
+        onClose={() => setShowModalMedication(false)}
+        consultationId={selectedConsultation?.consultationReferralId || selectedConsultation?.id}
+        onSuccess={handleMedicationSuccess}
+        mode={selectedMedicationMode}
+        existingMedications={
+          selectedConsultation 
+            ? consultationMedications[selectedConsultation.consultationReferralId || selectedConsultation.id] || []
+            : []
+        }
       />
     </div>
   );
