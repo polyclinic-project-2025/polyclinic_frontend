@@ -147,10 +147,12 @@ export const userService = {
   getProfile: async (id) => {
     try {
       const response = await api.get(`/User/${id}/profile`);
+      console.log(response.data, " data is success ", response.data.isSuccess);
       
-      if (response.data.isSuccess) {
-        return response.data.value;
-      } else {
+      if (response.data) {
+        return response.data;
+      } 
+      else {
         throw new Error(response.data.errorMessage || 'Error al obtener el perfil');
       }
     } catch (error) {
