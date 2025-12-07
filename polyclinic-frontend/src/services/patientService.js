@@ -17,7 +17,7 @@ export const patientService = {
   /** Obtener paciente por ID */
   getById: async (id) => {
     try {
-      const response = await api.get('/Patients/${id}');
+      const response = await api.get(`/Patients/${id}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al obtener paciente';
@@ -28,7 +28,7 @@ export const patientService = {
   /** Buscar por nombre */
   searchByName: async (name) => {
     try {
-      const response = await api.get('/Patients/search/name?name=${name}');
+      const response = await api.get(`/Patients/search/name?name=${name}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar paciente por nombre';
@@ -39,7 +39,7 @@ export const patientService = {
   /** Buscar por identificación */
   searchByIdentification: async (identification) => {
     try {
-      const response = await api.get('/Patients/search/identification?identification=${identification}');
+      const response = await api.get(`/Patients/search/identification?identification=${identification}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar paciente por identificación';
@@ -50,7 +50,7 @@ export const patientService = {
   /** Buscar por edad */
   searchByAge: async (age) => {
     try {
-      const response = await api.get('/Patients/search/age?age=${age}');
+      const response = await api.get(`/Patients/search/age?age=${age}`);
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al buscar paciente por edad';
@@ -72,7 +72,7 @@ export const patientService = {
   /** Actualizar paciente */
   update: async (id, data) => {
     try {
-      await api.put('/Patients/${id}', data);
+      await api.put(`/Patients/${id}`, data);
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al actualizar paciente';
       throw new Error(msg);
@@ -82,7 +82,7 @@ export const patientService = {
   /** Eliminar paciente */
   delete: async (id) => {
     try {
-      await api.delete('/Patients/${id}');
+      await api.delete(`/Patients/${id}`);
     } catch (error) {
       const msg = error.response?.data?.errorMessage || 'Error al eliminar paciente';
       throw new Error(msg);
