@@ -12,6 +12,7 @@ import UsersView from "./UsersView";
 import ModalSettings from "../components/ModalSettings";
 import ConsultationsReferral from "./ConsultationsReferral";
 import Employees from "./Employees";
+import Medications from "./Medications";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -270,12 +271,7 @@ const Dashboard = () => {
           </div>
         );
       case "medications":
-        return (
-          <div className="text-center py-12">
-            <Pill className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Medicamentos en desarrollo</p>
-          </div>
-        );
+        return <Medications />;
       case "warehouse":
         return (
           <div className="text-center py-12">
