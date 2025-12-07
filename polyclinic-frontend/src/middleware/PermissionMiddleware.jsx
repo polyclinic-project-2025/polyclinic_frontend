@@ -21,6 +21,10 @@ const PERMISSIONS = {
     canCreateStaff: true,
     canEditStaff: true,
     canDeleteStaff: true,
+    canCreateMedications: true,
+    canEditMedications: true,
+    canDeleteMedications: true,
+    canViewMedications: true,
   },
   
   Doctor: {
@@ -39,6 +43,10 @@ const PERMISSIONS = {
     canCreateStaff: false,
     canEditStaff: false,
     canDeleteStaff: false,
+    canCreateMedications: false,
+    canEditMedications: false,
+    canDeleteMedications: false,
+    canViewMedications: true,
   },
   
   Nurse: {
@@ -57,6 +65,10 @@ const PERMISSIONS = {
     canCreateStaff: false,
     canEditStaff: false,
     canDeleteStaff: false,
+    canCreateMedications: false,
+    canEditMedications: false,
+    canDeleteMedications: false,
+    canViewMedications: true,
   },
   
   MedicalStaff: {
@@ -75,6 +87,10 @@ const PERMISSIONS = {
     canCreateStaff: false,
     canEditStaff: false,
     canDeleteStaff: false,
+    canCreateMedications: false,
+    canEditMedications: false,
+    canDeleteMedications: false,
+    canViewMedications: true,
   },
   
   Patient: {
@@ -93,14 +109,18 @@ const PERMISSIONS = {
     canCreateStaff: false,
     canEditStaff: false,
     canDeleteStaff: false,
+    canCreateMedications: false,
+    canEditMedications: false,
+    canDeleteMedications: false,
+    canViewMedications: false,
   },
 };
 
 const MODULE_ACCESS = {
   Admin: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'staff', 'medications', 'warehouse', 'reports'],
-  Doctor: ['dashboard', 'patients', 'consultations', 'emergency', 'departments'],
-  Nurse: ['dashboard', 'patients', 'consultations', 'emergency', 'departments'],
-  MedicalStaff: ['dashboard', 'patients', 'consultations', 'departments'],
+  Doctor: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications'],
+  Nurse: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications'],
+  MedicalStaff: ['dashboard', 'patients', 'consultations', 'departments', 'medications'],
   Patient: ['dashboard', 'consultations', 'departments'],
 };
 
