@@ -12,7 +12,7 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "Patient",
+    role: "Paciente",
     phoneNumber: null,
     validation: {
       IdentificationNumber: "",
@@ -22,10 +22,10 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
 
   const roles = [
-    { value: "Patient", label: "Paciente" },
+    { value: "Paciente", label: "Paciente" },
     { value: "Doctor", label: "Doctor" },
-    { value: "Nurse", label: "Enfermero/a" },
-    { value: "MedicalStaff", label: "Personal Médico" },
+    { value: "Enfermero/a", label: "Enfermero/a" },
+    { value: "Jefe de Almacén", label: "Jefe de Almacén" },
   ];
 
   const handleChange = (e) => {

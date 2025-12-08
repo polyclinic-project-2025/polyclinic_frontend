@@ -24,7 +24,7 @@ const MyAccount = ({ isOpen, onClose }) => {
     const [selectedRole, setSelectedRole] = useState("");
     const [alert, setAlert] = useState(null); // Estado para manejar alerts
 
-    const availableRoles = ["Admin", "Doctor", "Nurse", "MedicalStaff", "Patient"];
+    const availableRoles = ["Admin", "Doctor", "Enfermero/a", "Jefe de Almacén", "Paciente", "Jefe de Departamento"];
 
     const handleCloseAlert = () => {
         setAlert(null);

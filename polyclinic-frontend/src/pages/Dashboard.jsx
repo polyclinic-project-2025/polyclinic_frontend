@@ -56,11 +56,12 @@ const Dashboard = () => {
   };
 
   const roleTranslations = {
-    Patient: "Paciente",
+    Paciente: "Paciente",
     Doctor: "Doctor",
-    Nurse: "Enfermero/a",
-    MedicalStaff: "Personal Médico",
-    Admin: "Administrador",
+    "Enfermero/a": "Enfermero/a",
+    "Jefe de Almacén": "Jefe de Almacén",
+    Admin: "Admin",
+    "Jefe de Departamento": "Jefe de Departamento",
   };
 
   const slides = [
@@ -465,9 +466,10 @@ const Dashboard = () => {
 
 export default Dashboard;
 export const roleTranslations = {
-  Patient: "Paciente",
+  Paciente: "Paciente",
   Doctor: "Doctor",
-  Nurse: "Enfermero/a",
-  MedicalStaff: "Personal Médico",
-  Admin: "Administrador",
+  "Enfermero/a": "Enfermero/a",
+  "Jefe de Almacén": "Jefe de Almacén",
+  Admin: "Admin",
+  "Jefe de Departamento": "Jefe de Departamento",
 };

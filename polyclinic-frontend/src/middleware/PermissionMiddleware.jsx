@@ -63,7 +63,7 @@ const PERMISSIONS = {
     canDeleteReferrals: true,
   },
   
-  Nurse: {
+  "Enfermero/a": {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
@@ -92,7 +92,7 @@ const PERMISSIONS = {
     canDeleteReferrals: false,
   },
   
-  MedicalStaff: {
+  "Jefe de Almacén": {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
@@ -121,7 +121,7 @@ const PERMISSIONS = {
     canDeleteReferrals: false,
   },
   
-  Patient: {
+  Paciente: {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
@@ -150,7 +150,7 @@ const PERMISSIONS = {
     canDeleteReferrals: false,
   },
 
-  DepartmentHead: {
+  "Jefe de Departamento": {
     canCreateDepartments: false,
     canEditDepartments: false,
     canDeleteDepartments: false,
@@ -179,18 +179,20 @@ const PERMISSIONS = {
 
 const MODULE_ACCESS = {
   Admin: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'staff', 'medications', 'warehouse', 'reports'],
-  Doctor: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications'],
-  Nurse: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications'],
-  MedicalStaff: ['dashboard', 'patients', 'consultations', 'departments', 'medications'],
-  Patient: ['dashboard', 'consultations', 'departments'],
+  Doctor: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications', 'reports'],
+  "Enfermero/a": ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications', 'reports'],
+  "Jefe de Almacén": ['dashboard', 'medications', 'warehouse', 'reports'],
+  Paciente: ['dashboard', 'consultations', 'departments', 'reports'],
+  "Jefe de Departamento": ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications', 'reports'],
 };
 
 const OPTIONS_ACCESS = {
   Admin: ['account', 'users', 'about'],
   Doctor: ['account', 'about'],
-  Nurse: ['account', 'about'],
-  MedicalStaff: ['account', 'about'],
-  Patient: ['account', 'about'],
+  "Enfermero/a": ['account', 'about'],
+  "Jefe de Almacén": ['account', 'about'],
+  Paciente: ['account', 'about'],
+  "Jefe de Departamento": ['account', 'about'],
 };
 
 
@@ -330,10 +332,10 @@ export const usePermissions = () => {
       return user.roles.includes('Admin');
     },
 
-    // Verificar si es departmentHead
+    // Verificar si es jefe de departamento
     isDepartmentHead: () => {
       if (!user || !user.roles) return false;
-      return user.roles.includes('DepartmentHead');
+      return user.roles.includes('Jefe de Departamento');
     },
   };
 };
