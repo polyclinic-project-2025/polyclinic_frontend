@@ -88,4 +88,31 @@ export const patientService = {
       throw new Error(msg);
     }
   },
+
+  /**
+   * Exporta pacientes a PDF
+   * @returns {Promise<string>} - URL de descarga del PDF
+   */
+  exportToPdf: async () => {
+    try {
+      const response = await api.get('/Patients/export');
+      const result = response.data;
+
+      // Decodificar Base64 y descargar
+      const byteCharacters = atob(result.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      // Crear enlace de descarga
+      const url = URL.createObjectURL(blob);
+      return url;
+    } catch (error) {
+      const msg = error.response?.data?.errorMessage || 'Error al exportar pacientes';
+      throw new Error(msg);
+    }
+  },
 };

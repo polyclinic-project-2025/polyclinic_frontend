@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Users, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2,
   User, Phone, MapPin, IdCard, Calendar, Filter,
-  ArrowRight, ExternalLink, Building2
+  ArrowRight, ExternalLink, Building2, Download
 } from 'lucide-react';
 import { patientService } from '../services/patientService';
 import { derivationService } from '../services/derivationService';
@@ -586,6 +586,41 @@ const Patients = () => {
     }
   };
 
+  // ========== FUNCIÓN PARA EXPORTAR PACIENTES ==========
+  
+  const handleExportPatients = async () => {
+    if (!can('canExportPatients')) {
+      setError('No tienes permisos para exportar pacientes');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const url = await patientService.exportToPdf();
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pacientes_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Pacientes exportados exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar pacientes';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Obtener badge según filtro
   const getFilterBadge = () => {
     switch (filterType) {
@@ -639,6 +674,31 @@ const Patients = () => {
         </div>
 
         <div className="flex gap-3">
+          {filterType === 'all' && (
+            <>
+              <ProtectedComponent requiredPermission="canExportPatients">
+                <button
+                  onClick={handleExportPatients}
+                  className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-lg"
+                  disabled={loading}
+                >
+                  <Download className="w-5 h-5" />
+                  Exportar PDF
+                </button>
+              </ProtectedComponent>
+              
+              <ProtectedComponent requiredPermission="canCreatePatients">
+                <button
+                  onClick={handleCreatePatient}
+                  className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
+                >
+                  <Plus className="w-5 h-5" />
+                  Nuevo Paciente
+                </button>
+              </ProtectedComponent>
+            </>
+          )}
+
           {filterType === 'derived' && (
             <ProtectedComponent requiredPermission="canCreateDerivations">
               <button
@@ -659,18 +719,6 @@ const Patients = () => {
               >
                 <Plus className="w-5 h-5" />
                 Nueva Remisión
-              </button>
-            </ProtectedComponent>
-          )}
-
-          {filterType === 'all' && (
-            <ProtectedComponent requiredPermission="canCreatePatients">
-              <button
-                onClick={handleCreatePatient}
-                className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
-              >
-                <Plus className="w-5 h-5" />
-                Nuevo Paciente
               </button>
             </ProtectedComponent>
           )}

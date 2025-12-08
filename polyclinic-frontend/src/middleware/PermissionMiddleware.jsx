@@ -32,6 +32,11 @@ const PERMISSIONS = {
     canDeleteDerivations: false,
     canCreateReferrals: false,
     canDeleteReferrals: false,
+    canExportPatients: true,
+    canExportDepartments: true,
+    canExportUsers: true,
+    canExportConsultations: true,
+    canExportMedications: true,
   },
   
   Doctor: {
@@ -61,6 +66,11 @@ const PERMISSIONS = {
     canDeleteDerivations: true,
     canCreateReferrals: true,
     canDeleteReferrals: true,
+    canExportPatients: true,
+    canExportDepartments: false,
+    canExportUsers: false,
+    canExportConsultations: true,
+    canExportMedications: false,
   },
   
   "Enfermero/a": {
@@ -90,6 +100,11 @@ const PERMISSIONS = {
     canDeleteDerivations: false,
     canCreateReferrals: false,
     canDeleteReferrals: false,
+    canExportPatients: false,
+    canExportDepartments: false,
+    canExportUsers: false,
+    canExportConsultations: false,
+    canExportMedications: false,
   },
   
   "Jefe de Almacén": {
@@ -119,6 +134,11 @@ const PERMISSIONS = {
     canDeleteDerivations: false,
     canCreateReferrals: false,
     canDeleteReferrals: false,
+    canExportPatients: false,
+    canExportDepartments: false,
+    canExportUsers: false,
+    canExportConsultations: false,
+    canExportMedications: true,
   },
   
   Paciente: {
@@ -148,6 +168,11 @@ const PERMISSIONS = {
     canDeleteDerivations: false,
     canCreateReferrals: false,
     canDeleteReferrals: false,
+    canExportPatients: false,
+    canExportDepartments: false,
+    canExportUsers: false,
+    canExportConsultations: false,
+    canExportMedications: false,
   },
 
   "Jefe de Departamento": {
@@ -173,7 +198,11 @@ const PERMISSIONS = {
     canDeleteDerivations: true,
     canCreateReferrals: true,
     canDeleteReferrals: true,
-
+    canExportPatients: true,
+    canExportDepartments: false,
+    canExportUsers: false,
+    canExportConsultations: true,
+    canExportMedications: false,
   },
 };
 

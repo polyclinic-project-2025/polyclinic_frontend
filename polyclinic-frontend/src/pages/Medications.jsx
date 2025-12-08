@@ -1,7 +1,7 @@
 // pages/Medications.jsx
 import React, { useState, useEffect } from 'react';
 import {
-  Pill, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, Eye, Package, Calendar, Building
+  Pill, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, Eye, Package, Calendar, Building, Download
 } from 'lucide-react';
 import medicationService from '../services/medicationService';
 import { useAuth } from '../context/AuthContext';
@@ -171,6 +171,39 @@ const Medications = () => {
     }));
   };
 
+  const handleExportMedications = async () => {
+    if (!can('canExportMedications')) {
+      setError('No tienes permisos para exportar medicamentos');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const url = await medicationService.exportToPdf();
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `medicamentos_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Medicamentos exportados exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar medicamentos';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredMedications = medications.filter((med) =>
     med.commercialName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     med.scientificName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -205,15 +238,28 @@ const Medications = () => {
           </p>
         </div>
         
-        <ProtectedComponent requiredPermission="canCreateMedications">
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
-          >
-            <Plus className="w-5 h-5" />
-            Nuevo Medicamento
-          </button>
-        </ProtectedComponent>
+        <div className="flex gap-3">
+          <ProtectedComponent requiredPermission="canExportMedications">
+            <button
+              onClick={handleExportMedications}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-lg"
+              disabled={loading}
+            >
+              <Download className="w-5 h-5" />
+              Exportar PDF
+            </button>
+          </ProtectedComponent>
+
+          <ProtectedComponent requiredPermission="canCreateMedications">
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              Nuevo Medicamento
+            </button>
+          </ProtectedComponent>
+        </div>
       </div>
 
       {/* Search Bar */}
