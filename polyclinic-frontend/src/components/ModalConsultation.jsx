@@ -182,10 +182,15 @@ const ModalConsultation = ({
         throw new Error("No se pudo obtener el jefe de departamento");
       }
 
+      // Mantener la hora local pero formatearla como si fuera UTC
+      const localDate = new Date(formData.dateTime);
+      const offsetMs = localDate.getTimezoneOffset() * 60000;
+      const localAsUTC = new Date(localDate.getTime() - offsetMs);
+
       const dataToSend = {
         referralId: formData.patientId,
         doctorId: formData.doctorId,
-        dateTimeCRem: new Date(formData.dateTime).toISOString(),
+        dateTimeCRem: localAsUTC.toISOString(),
         departmentHeadId: departmentHeadId,
         diagnosis: formData.diagnostic.trim(),
       };
