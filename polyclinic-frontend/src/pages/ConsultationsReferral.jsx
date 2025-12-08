@@ -15,6 +15,7 @@ import {
   Pill,
   ChevronRight,
   ChevronDown,
+  Download,
 } from "lucide-react";
 import { consultationReferralService } from "../services/consultationReferralService";
 import {
@@ -142,6 +143,39 @@ const Consultations = () => {
     loadConsultations(); // Recargar para actualizar la visualización
   };
 
+  const handleExportConsultations = async () => {
+    if (!can('canExportConsultations')) {
+      setError('No tienes permisos para exportar consultas');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const url = await consultationReferralService.exportToPdf();
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `consultas_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Consultas exportadas exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar consultas';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Función para alternar el estado expandido de una tarjeta
   const toggleExpandCard = (consultId) => {
     setExpandedCards(prev => ({
@@ -185,15 +219,28 @@ const Consultations = () => {
           </p>
         </div>
 
-        <ProtectedComponent requiredPermission="canCreateConsultations">
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
-          >
-            <Plus className="w-5 h-5" />
-            Agregar Consulta
-          </button>
-        </ProtectedComponent>
+        <div className="flex gap-3">
+          <ProtectedComponent requiredPermission="canExportConsultations">
+            <button
+              onClick={handleExportConsultations}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-lg"
+              disabled={loading}
+            >
+              <Download className="w-5 h-5" />
+              Exportar PDF
+            </button>
+          </ProtectedComponent>
+
+          <ProtectedComponent requiredPermission="canCreateConsultations">
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              Agregar Consulta
+            </button>
+          </ProtectedComponent>
+        </div>
       </div>
 
       {/* Search Bar */}

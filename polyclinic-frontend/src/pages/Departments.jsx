@@ -1,7 +1,7 @@
 // pages/Departments.jsx
 import React, { useState, useEffect } from 'react';
 import {
-  Building2, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, UserCog, User
+  Building2, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, UserCog, User, Download
 } from 'lucide-react';
 import { departmentService } from '../services/departmentService';
 import { departmentHeadService } from '../services/departmentHeadService';
@@ -215,6 +215,39 @@ const Departments = () => {
     }
   };
 
+  const handleExportDepartments = async () => {
+    if (!can('canExportDepartments')) {
+      setError('No tienes permisos para exportar departamentos');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const url = await departmentService.exportToPdf();
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `departamentos_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Departamentos exportados exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar departamentos';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredDepartments = departments.filter((dept) =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -246,15 +279,28 @@ const Departments = () => {
           </p>
         </div>
         
-        <ProtectedComponent requiredPermission="canCreateDepartments">
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
-          >
-            <Plus className="w-5 h-5" />
-            Nuevo Departamento
-          </button>
-        </ProtectedComponent>
+        <div className="flex gap-3">
+          <ProtectedComponent requiredPermission="canExportDepartments">
+            <button
+              onClick={handleExportDepartments}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-lg"
+              disabled={loading}
+            >
+              <Download className="w-5 h-5" />
+              Exportar PDF
+            </button>
+          </ProtectedComponent>
+          
+          <ProtectedComponent requiredPermission="canCreateDepartments">
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              Nuevo Departamento
+            </button>
+          </ProtectedComponent>
+        </div>
       </div>
 
       {/* Search Bar */}

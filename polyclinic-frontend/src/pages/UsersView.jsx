@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Building2, Edit, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2,
+  Building2, Edit, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, Download,
 } from 'lucide-react';
 import { userService } from '../services/userService';
+import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
 
 const Users = () => {
+  const { can } = usePermissions();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,6 +116,39 @@ const Users = () => {
     }
   };
 
+  const handleExportUsers = async () => {
+    if (!can('canExportUsers')) {
+      setError('No tienes permisos para exportar usuarios');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const url = await userService.exportToPdf();
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `usuarios_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Usuarios exportados exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar usuarios';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredUsers = users.filter((usr) =>
     (usr.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (usr.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -141,6 +176,17 @@ const Users = () => {
             Gestiona los usuarios del policlínico
           </p>
         </div>
+
+        <ProtectedComponent requiredPermission="canExportUsers">
+          <button
+            onClick={handleExportUsers}
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-lg"
+            disabled={loading}
+          >
+            <Download className="w-5 h-5" />
+            Exportar PDF
+          </button>
+        </ProtectedComponent>
       </div>
 
       {/* Search Bar */}

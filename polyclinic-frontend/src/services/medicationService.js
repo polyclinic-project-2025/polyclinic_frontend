@@ -80,6 +80,33 @@ const medicationService = {
       console.error('Error deleting medication:', error);
       throw error;
     }
+  },
+
+  /**
+   * Exporta medicamentos a PDF
+   * @returns {Promise<string>} - URL de descarga del PDF
+   */
+  exportToPdf: async () => {
+    try {
+      const response = await api.get('/Medication/export');
+      const result = response.data;
+
+      // Decodificar Base64 y descargar
+      const byteCharacters = atob(result.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      // Crear enlace de descarga
+      const url = URL.createObjectURL(blob);
+      return url;
+    } catch (error) {
+      console.error('Error exporting medications:', error);
+      throw error;
+    }
   }
 };
 
