@@ -13,6 +13,8 @@ import {
   Stethoscope,
   FileText,
   Pill,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { consultationReferralService } from "../services/consultationReferralService";
 import {
@@ -25,11 +27,13 @@ import ModalMedicationReferral from "../components/ModalMedicationReferral";
 import RecentConsultationsWidget from "../components/RecentConsultationsWidget";
 import ConsultationsDateRangeFilter from "../components/ConsultationsDateRangeFilter"; // Usamos la versión V2 corregida
 import medicationReferralService from "../services/medicationReferralService";
+import medicationService from "../services/medicationService";
 
 const Consultations = () => {
   const { can } = usePermissions();
   const [consultations, setConsultations] = useState([]);
   const [consultationMedications, setConsultationMedications] = useState({});
+  const [expandedCards, setExpandedCards] = useState({}); // Estado para controlar tarjetas expandidas
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showModalConsultation, setShowModalConsultation] = useState(false);
@@ -64,13 +68,24 @@ const Consultations = () => {
   const loadAllMedications = async (consultationsList) => {
     try {
       const medicationsMap = {};
-      const allMedications = await medicationReferralService.getAll();
+      const allMedicationReferrals = await medicationReferralService.getAll();
+      const allMedicationsInfo = await medicationService.getAll();
       
       consultationsList.forEach(consultation => {
         const consultId = consultation.consultationReferralId || consultation.id;
-        medicationsMap[consultId] = allMedications.filter(
+        const consultationMeds = allMedicationReferrals.filter(
           med => med.consultationReferralId === consultId
         );
+        
+        // Enriquecer con información completa del medicamento
+        medicationsMap[consultId] = consultationMeds.map(medRef => {
+          const medInfo = allMedicationsInfo.find(m => m.medicationId === medRef.medicationId);
+          return {
+            ...medRef,
+            commercialName: medInfo?.commercialName || 'Desconocido',
+            scientificName: medInfo?.scientificName || ''
+          };
+        });
       });
       
       setConsultationMedications(medicationsMap);
@@ -125,6 +140,14 @@ const Consultations = () => {
     setSuccess("Medicamentos recetados exitosamente");
     setTimeout(() => setSuccess(""), 3000);
     loadConsultations(); // Recargar para actualizar la visualización
+  };
+
+  // Función para alternar el estado expandido de una tarjeta
+  const toggleExpandCard = (consultId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [consultId]: !prev[consultId]
+    }));
   };
 
   // Filtra las consultas (nombres corregidos)
@@ -281,13 +304,35 @@ const Consultations = () => {
             {/* Información de la consulta */}
             <div className="space-y-2">
               {hasMedications && (
-                <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-sm text-green-800">
-                    <Pill className="w-4 h-4" />
-                    <span className="font-medium">
-                      {medications.length} medicamento{medications.length !== 1 ? 's' : ''} recetado{medications.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
+                <div className="mb-3">
+                  <button
+                    onClick={() => toggleExpandCard(consultId)}
+                    className="w-full p-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 text-sm text-green-800">
+                      <Pill className="w-4 h-4" />
+                      <span className="font-medium">
+                        {medications.length} medicamento{medications.length !== 1 ? 's' : ''} recetado{medications.length !== 1 ? 's' : ''}
+                      </span>
+                      {expandedCards[consultId] ? (
+                        <ChevronDown className="w-4 h-4 ml-auto" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 ml-auto" />
+                      )}
+                    </div>
+                  </button>
+                  
+                  {/* Lista de medicamentos expandida */}
+                  {expandedCards[consultId] && (
+                    <div className="mt-2 space-y-2 pl-2">
+                      {medications.map((med, index) => (
+                        <div key={index} className="p-2 bg-white border border-green-100 rounded text-sm">
+                          <div className="font-medium text-gray-800">{med.commercialName || med.medicationName || 'Medicamento'}</div>
+                          <div className="text-gray-600">Cantidad: {med.quantity || 'N/A'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               {consultation.departmentName && (
