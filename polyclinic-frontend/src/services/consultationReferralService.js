@@ -72,7 +72,9 @@ export const consultationReferralService = {
    * @returns {Promise<Object>}
    */
   create: async (consultationData) => {
-    try { 
+    try {
+      console.log('📅 [consultationReferralService.create] dateTimeCRe enviado:', consultationData.dateTimeCRe);
+      console.log('📋 [consultationReferralService.create] Datos completos:', consultationData);
       const response = await api.post('/ConsultationReferral', consultationData);
       return response.data;
     } catch (error) {
