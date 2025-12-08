@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { userService } from '../services/userService';
 import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
+import Pagination from '../components/Pagination';
 
 const Users = () => {
   const { can } = usePermissions();
@@ -17,6 +18,10 @@ const Users = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     loadUsers();
@@ -154,6 +159,19 @@ const Users = () => {
     (usr.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (usr.phoneNumber?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+  
+  // Resetear a página 1 cuando cambie searchTerm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+  
+  // Calcular items para la página actual
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+  
+  // Calcular total de páginas
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -224,7 +242,7 @@ const Users = () => {
 
       {/* Users Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredUsers.map((_user) => (
+        {paginatedUsers.map((_user) => (
           <div
             key={_user.id}
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
@@ -279,6 +297,17 @@ const Users = () => {
           </div>
         ))}
       </div>
+      
+      {/* Paginación */}
+      {filteredUsers.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredUsers.length}
+        />
+      )}
 
       {filteredUsers.length === 0 && (
         <div className="text-center py-12">

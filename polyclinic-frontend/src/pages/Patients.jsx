@@ -12,6 +12,7 @@ import { departmentService } from '../services/departmentService';
 import { useAuth } from '../context/AuthContext';
 import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
 import PatientCIValidator from '../components/PatientCIValidator';
+import Pagination from '../components/Pagination';
 
 const Patients = () => {
   const { hasRole } = useAuth();
@@ -64,6 +65,10 @@ const Patients = () => {
   // Estados para filtros y datos
   const [filterType, setFilterType] = useState('all');
   const [departments, setDepartments] = useState([]);
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -80,6 +85,8 @@ const Patients = () => {
     } else {
       loadAllPatients();
     }
+    // Resetear a página 1 cuando cambie el filtro
+    setCurrentPage(1);
   }, [filterType]);
 
   const loadAllPatients = async () => {
@@ -321,6 +328,28 @@ const Patients = () => {
 
     return () => clearTimeout(timer);
   }, [searchTerm, filterType]);
+
+  // Resetear a página 1 cuando cambie searchTerm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Calcular items para la página actual
+  const getCurrentPageItems = (items) => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return items.slice(startIndex, endIndex);
+  };
+
+  // Calcular total de páginas
+  const getTotalPages = (items) => {
+    return Math.ceil(items.length / ITEMS_PER_PAGE);
+  };
+
+  // Obtener items paginados según el filtro activo
+  const paginatedPatients = getCurrentPageItems(patients);
+  const paginatedDerivations = getCurrentPageItems(derivations);
+  const paginatedReferrals = getCurrentPageItems(referrals);
 
   // Obtener nombre de departamento
   const getDepartmentName = (departmentId) => {
@@ -817,8 +846,9 @@ const Patients = () => {
 
       {/* Grid de Pacientes (CON BOTONES COMO DEPARTMENTS) */}
       {filterType === 'all' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {patients.map((patient) => (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedPatients.map((patient) => (
             <div
               key={patient.patientId}
               className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
@@ -877,12 +907,25 @@ const Patients = () => {
             </div>
           ))}
         </div>
+        
+        {/* Paginación para pacientes */}
+        {patients.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={getTotalPages(patients)}
+            onPageChange={setCurrentPage}
+            itemsPerPage={ITEMS_PER_PAGE}
+            totalItems={patients.length}
+          />
+        )}
+        </>
       )}
 
       {/* Grid de Derivaciones */}
       {filterType === 'derived' && (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {derivations.map((derivation) => (
+          {paginatedDerivations.map((derivation) => (
             <div
               key={derivation.derivationId}
               className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
@@ -952,12 +995,25 @@ const Patients = () => {
             </div>
           ))}
         </div>
+        
+        {/* Paginación para derivaciones */}
+        {derivations.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={getTotalPages(derivations)}
+            onPageChange={setCurrentPage}
+            itemsPerPage={ITEMS_PER_PAGE}
+            totalItems={derivations.length}
+          />
+        )}
+        </>
       )}
 
       {/* Grid de Remisiones */}
       {filterType === 'referred' && (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {referrals.map((referral) => (
+          {paginatedReferrals.map((referral) => (
             <div
               key={referral.referralId}
               className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
@@ -1029,6 +1085,18 @@ const Patients = () => {
             </div>
           ))}
         </div>
+        
+        {/* Paginación para remisiones */}
+        {referrals.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={getTotalPages(referrals)}
+            onPageChange={setCurrentPage}
+            itemsPerPage={ITEMS_PER_PAGE}
+            totalItems={referrals.length}
+          />
+        )}
+        </>
       )}
 
       {/* Mensajes de vacío */}

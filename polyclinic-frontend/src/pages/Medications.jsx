@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
 import ModalMedication from '../components/ModalMedication';
 import ModalMedicationDetails from '../components/ModalMedicationDetails';
+import Pagination from '../components/Pagination';
 
 const Medications = () => {
   const { can, isAdmin } = usePermissions();
@@ -36,6 +37,10 @@ const Medications = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     loadMedications();
@@ -209,6 +214,19 @@ const Medications = () => {
     med.scientificName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     med.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  // Resetear a página 1 cuando cambie searchTerm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+  
+  // Calcular items para la página actual
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedMedications = filteredMedications.slice(startIndex, endIndex);
+  
+  // Calcular total de páginas
+  const totalPages = Math.ceil(filteredMedications.length / ITEMS_PER_PAGE);
 
   const getStockStatus = (current, min, max) => {
     if (current < min) return { text: 'Bajo', color: 'text-red-600 bg-red-100' };
@@ -306,7 +324,7 @@ const Medications = () => {
 
       {/* Medications Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredMedications.map((medication) => {
+        {paginatedMedications.map((medication) => {
           const warehouseStatus = getStockStatus(
             medication.quantityWarehouse,
             medication.minQuantityWarehouse,
@@ -412,6 +430,17 @@ const Medications = () => {
           );
         })}
       </div>
+      
+      {/* Paginación */}
+      {filteredMedications.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredMedications.length}
+        />
+      )}
 
       {filteredMedications.length === 0 && (
         <div className="text-center py-12">

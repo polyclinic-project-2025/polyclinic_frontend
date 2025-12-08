@@ -125,7 +125,7 @@ const ModalMedication = ({
                 />
               </div>
 
-              <div className="md:col-span-2">
+              {/* <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   URL de Imagen (opcional)
                 </label>
@@ -137,7 +137,7 @@ const ModalMedication = ({
                   className="bg-cyan-50 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   placeholder="https://ejemplo.com/imagen.jpg"
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 

@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
 import PatientCIValidator from '../components/PatientCIValidator';
 import CustomDatePicker from '../components/CustomDatePicker';
+import Pagination from '../components/Pagination';
 
 const Referrals = () => {
   const { hasRole } = useAuth();
@@ -31,6 +32,10 @@ const Referrals = () => {
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Cargar remitidos y departamentos al inicio
   useEffect(() => {
@@ -146,6 +151,19 @@ const Referrals = () => {
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
+  
+  // Resetear a página 1 cuando cambie searchTerm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+  
+  // Calcular items para la página actual
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedReferrals = referrals.slice(startIndex, endIndex);
+  
+  // Calcular total de páginas
+  const totalPages = Math.ceil(referrals.length / ITEMS_PER_PAGE);
 
   // Abrir modal de detalles
   const handleViewDetails = (referral) => {
@@ -329,7 +347,7 @@ const Referrals = () => {
 
       {/* Referrals Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {referrals.map((referral) => (
+        {paginatedReferrals.map((referral) => (
           <div
             key={referral.referralId}
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
@@ -408,6 +426,17 @@ const Referrals = () => {
           </div>
         ))}
       </div>
+      
+      {/* Paginación */}
+      {referrals.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={referrals.length}
+        />
+      )}
 
       {referrals.length === 0 && (
         <div className="text-center py-12">
