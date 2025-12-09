@@ -11,6 +11,7 @@ import Departments from "./Departments";
 import UsersView from "./UsersView";
 import ModalSettings from "../components/ModalSettings";
 import ConsultationsReferral from "./ConsultationsReferral";
+import ConsultationsDerivation from "./ConsultationsDerivation";
 import Employees from "./Employees";
 import Medications from "./Medications";
 import Patients from "./Patients";
@@ -214,6 +215,10 @@ const Dashboard = () => {
       switch (mode.id) {
         case "referral":
           return <ConsultationsReferral />;
+        
+        case "derivation":
+          return <ConsultationsDerivation  />;
+
         default:
           return (
           <div className="text-center py-12">
@@ -230,7 +235,7 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
-        );
+        )
       }
     }
 
