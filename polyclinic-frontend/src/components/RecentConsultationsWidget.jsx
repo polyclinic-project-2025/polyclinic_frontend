@@ -1,6 +1,6 @@
 // components/RecentConsultationsWidget.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { Stethoscope, Clock, FileText, Loader2, AlertCircle, Calendar, User, Search, ChevronDown, Building2, X } from "lucide-react";
+import { Stethoscope, Clock, FileText, Loader2, AlertCircle, Calendar, User, Search, ChevronDown, Building2, X, Pill } from "lucide-react";
 
 const RecentConsultationsWidget = ({ service }) => {
   const [recentConsultations, setRecentConsultations] = useState([]);
@@ -23,33 +23,25 @@ const RecentConsultationsWidget = ({ service }) => {
     const loadAllPatients = async () => {
       try {
         setLoadingPatients(true);
-        setError(""); // Limpiar error previo
+        setError("");
         
-        // Importar con named import (no default)
         const { patientService } = await import('../services/patientService');
         
-        // Verificar que el servicio existe
         if (!patientService || !patientService.getAll) {
           throw new Error("Servicio de pacientes no disponible");
         }
         
         const data = await patientService.getAll();
         
-        console.log("Pacientes cargados:", data); // ← DEBUG: Ver estructura
-        
-        // Verificar que data es un array
         if (!Array.isArray(data)) {
           console.error("La respuesta no es un array:", data);
           throw new Error("Formato de datos inválido");
         }
         
-        // Transformar a formato consistente según el DTO de C#
         const patients = data.map(patient => ({
-          id: patient.patientId,  // El DTO usa PatientId (pero JS lo recibe como patientId)
-          name: patient.name      // El DTO usa Name (pero JS lo recibe como name)
+          id: patient.patientId,
+          name: patient.name
         }));
-        
-        console.log("Pacientes transformados:", patients); // ← DEBUG
         
         if (patients.length === 0) {
           console.warn("No hay pacientes en el sistema");
@@ -58,11 +50,6 @@ const RecentConsultationsWidget = ({ service }) => {
         setAllPatients(patients);
       } catch (err) {
         console.error("Error al cargar pacientes:", err);
-        console.error("Detalles del error:", {
-          message: err.message,
-          stack: err.stack,
-          response: err.response
-        });
         setError("Error al cargar la lista de pacientes");
       } finally {
         setLoadingPatients(false);
@@ -79,13 +66,11 @@ const RecentConsultationsWidget = ({ service }) => {
       return;
     }
 
-    // Filtrar por término de búsqueda
     const searchLower = searchTerm.toLowerCase();
     const filtered = allPatients.filter(patient =>
       patient.name && patient.name.toLowerCase().includes(searchLower)
     );
 
-    console.log("Pacientes filtrados:", filtered); // ← DEBUG
     setFilteredPatients(filtered);
   }, [searchTerm, allPatients]);
 
@@ -113,15 +98,14 @@ const RecentConsultationsWidget = ({ service }) => {
       try {
         setLoading(true);
         setError("");
-        console.log("Cargando consultas para paciente:", selectedPatient.id); // ← DEBUG
+        console.log("Cargando consultas para paciente:", selectedPatient.id);
         
-        // Usar el método getLast10 del servicio unificado
         const data = await service.getLast10(selectedPatient.id);
-        console.log("Consultas obtenidas:", data); // ← DEBUG
+        console.log("Consultas obtenidas:", data);
         
         setRecentConsultations(data);
       } catch (err) {
-        console.error("Error detallado:", err); // ← DEBUG
+        console.error("Error detallado:", err);
         const errorMessage = err.message || "Error al cargar las últimas consultas";
         setError(errorMessage);
       } finally {
@@ -133,7 +117,7 @@ const RecentConsultationsWidget = ({ service }) => {
   }, [selectedPatient, service]);
 
   const handleSelectPatient = (patient) => {
-    console.log("Paciente seleccionado:", patient); // ← DEBUG
+    console.log("Paciente seleccionado:", patient);
     setSelectedPatient(patient);
     setSearchTerm(patient.name);
     setShowDropdown(false);
@@ -292,71 +276,112 @@ const RecentConsultationsWidget = ({ service }) => {
               </p>
             </div>
           ) : (
-            recentConsultations.map((consult) => (
-              <div
-                key={consult.id}
-                className="border-l-4 border-cyan-500 pl-4 py-2 hover:bg-gray-50 transition rounded"
-              >
-                {/* Tipo de Consulta */}
-                <div className="mb-2">
-                  <span className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
-                    consult.type === 'Referral' 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-purple-100 text-purple-800'
-                  }`}>
-                    {consult.type === 'Referral' ? 'Remisión' : 'Derivación'}
-                  </span>
-                </div>
-
-                <p className="font-medium text-gray-900 mb-2">
-                  {consult.patientFullName || selectedPatient?.name || "Paciente Desconocido"}
-                </p>
-                
-                <div className="space-y-1">
-                  {/* Fecha */}
-                  {consult.consultationDate && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4 flex-shrink-0" />
-                      <span>
-                        {new Date(consult.consultationDate).toLocaleDateString(
-                          "es-ES",
-                          {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            timeZone: "UTC",
-                          }
-                        )}
+            recentConsultations.map((consult) => {
+              // Obtener medicamentos de la consulta
+              const medications = consult.medications || [];
+              const hasMedications = medications.length > 0;
+              
+              return (
+                <div
+                  key={consult.id}
+                  className="border-l-4 border-cyan-500 pl-4 py-2 hover:bg-gray-50 transition rounded"
+                >
+                  {/* Tipo de Consulta y Badge de Medicamentos */}
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
+                      consult.type === 'Referral' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-purple-100 text-purple-800'
+                    }`}>
+                      {consult.type === 'Referral' ? 'Remisión' : 'Derivación'}
+                    </span>
+                    
+                    {/* Indicador de medicamentos */}
+                    {hasMedications && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
+                        <Pill className="w-3 h-3" />
+                        {medications.length} med{medications.length !== 1 ? 's' : ''}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
+
+                  <p className="font-medium text-gray-900 mb-2">
+                    {consult.patientFullName || selectedPatient?.name || "Paciente Desconocido"}
+                  </p>
                   
-                  {/* Departamento */}
-                  {consult.departmentName && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Building2 className="w-4 h-4 flex-shrink-0" />
-                      <span>{consult.departmentName}</span>
-                    </div>
-                  )}
-                  
-                  {/* Doctor */}
-                  {consult.doctorFullName && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Stethoscope className="w-4 h-4 flex-shrink-0" />
-                      <span>Dr. {consult.doctorFullName}</span>
-                    </div>
-                  )}
-                  
-                  {/* Diagnóstico */}
-                  {consult.diagnosis && (
-                    <div className="flex items-start gap-2 text-sm text-gray-600">
-                      <FileText className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <span className="line-clamp-2">{consult.diagnosis}</span>
-                    </div>
-                  )}
+                  <div className="space-y-1">
+                    {/* Fecha */}
+                    {consult.consultationDate && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Calendar className="w-4 h-4 flex-shrink-0" />
+                        <span>
+                          {new Date(consult.consultationDate).toLocaleDateString(
+                            "es-ES",
+                            {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              timeZone: "UTC",
+                            }
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Departamento */}
+                    {consult.departmentName && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Building2 className="w-4 h-4 flex-shrink-0" />
+                        <span>{consult.departmentName}</span>
+                      </div>
+                    )}
+                    
+                    {/* Doctor */}
+                    {consult.doctorFullName && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Stethoscope className="w-4 h-4 flex-shrink-0" />
+                        <span>Dr. {consult.doctorFullName}</span>
+                      </div>
+                    )}
+                    
+                    {/* Diagnóstico */}
+                    {consult.diagnosis && (
+                      <div className="flex items-start gap-2 text-sm text-gray-600">
+                        <FileText className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span className="line-clamp-2">{consult.diagnosis}</span>
+                      </div>
+                    )}
+                    
+                    {/* Medicamentos recetados */}
+                    {hasMedications && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-start gap-2">
+                          <Pill className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-gray-700 mb-1">
+                              Medicamentos recetados:
+                            </p>
+                            <ul className="space-y-1">
+                              {medications.map((med, index) => (
+                                <li 
+                                  key={med.medicationId || index} 
+                                  className="text-xs text-gray-600 flex items-center gap-2"
+                                >
+                                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
+                                  <span className="font-medium">{med.medicationName || 'Medicamento'}</span>
+                                  <span className="text-gray-400">•</span>
+                                  <span>Cant: {med.quantity}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
