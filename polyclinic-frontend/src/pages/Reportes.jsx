@@ -3,7 +3,7 @@ import React from "react";
 import { BarChart3 } from "lucide-react";
 import RecentConsultationsWidget from "../components/RecentConsultationsWidget";
 import ConsultationsDateRangeFilter from "../components/ConsultationsDateRangeFilter";
-import unifiedConsultationService from "../services/unifiedConsultationService";
+import analyticsService from "../services/analyticsService";
 
 const Reportes = () => {
   return (
@@ -24,10 +24,10 @@ const Reportes = () => {
       {/* Grid con los dos widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Widget de Últimas 10 Consultas */}
-        <RecentConsultationsWidget service={unifiedConsultationService} />
+        <RecentConsultationsWidget service={analyticsService} />
         
         {/* Widget de Búsqueda por Rango de Fechas */}
-        <ConsultationsDateRangeFilter service={unifiedConsultationService} />
+        <ConsultationsDateRangeFilter service={analyticsService} />
       </div>
     </div>
   );

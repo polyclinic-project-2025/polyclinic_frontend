@@ -16,7 +16,7 @@ import Employees from "./Employees";
 import Medications from "./Medications";
 import Patients from "./Patients";
 import RecentConsultationsWidget from "../components/RecentConsultationsWidget";
-import unifiedConsultationService from "../services/unifiedConsultationService";
+import analyticsService from "../services/analyticsService";
 import Reportes from "./Reportes";
 
 const Dashboard = () => {
