@@ -23,8 +23,6 @@ import { ProtectedComponent, usePermissions } from '../middleware/PermissionMidd
 import ModalConsultationDerivation from '../components/ModalConsultationDerivation';
 import ModalMedicationsDerivation  from '../components/ModalMedicationsDerivation';
 
-import RecentConsultations from '../components/RecentConsultationsWidget';
-import ConsultationsDateRangeFilter from '../components/ConsultationsDateRangeFilter';
 import medicationDerivationsService from '../services/medicationDerivationService';
 
 const ConsultationsDerivation = () => {
