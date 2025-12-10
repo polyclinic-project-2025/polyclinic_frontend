@@ -15,6 +15,9 @@ import ConsultationsDerivation from "./ConsultationsDerivation";
 import Employees from "./Employees";
 import Medications from "./Medications";
 import Patients from "./Patients";
+import RecentConsultationsWidget from "../components/RecentConsultationsWidget";
+import unifiedConsultationService from "../services/unifiedConsultationService";
+import Reportes from "./Reportes";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -283,10 +286,7 @@ const Dashboard = () => {
         );
       case "reports":
         return (
-          <div className="text-center py-12">
-            <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Reportes en desarrollo</p>
-          </div>
+          <Reportes />
         );
       default:
         return (

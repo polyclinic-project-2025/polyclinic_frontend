@@ -274,15 +274,8 @@ const Consultations = () => {
       </div>
 
       <h2 className="text-2xl font-bold text-gray-900 mt-8">
-        Analíticas Rápidas
+        Consultas
       </h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Componente para el rango de fechas, con el service como prop */}
-        <ConsultationsDateRangeFilter service={consultationReferralService} />
-
-        {/* Componente para las últimas 10, con el service como prop */}
-        <RecentConsultationsWidget service={consultationReferralService} />
-      </div>
 
       {/* Alerts */}
       {error && (

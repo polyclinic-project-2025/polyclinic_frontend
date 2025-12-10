@@ -23,7 +23,7 @@ import { ProtectedComponent, usePermissions } from '../middleware/PermissionMidd
 import ModalConsultationDerivation from '../components/ModalConsultationDerivation';
 import ModalMedicationsDerivation  from '../components/ModalMedicationsDerivation';
 
-import RecentConsultationsWidget from '../components/RecentConsultationsWidget';
+import RecentConsultations from '../components/RecentConsultationsWidget';
 import ConsultationsDateRangeFilter from '../components/ConsultationsDateRangeFilter';
 import medicationDerivationsService from '../services/medicationDerivationService';
 
@@ -78,7 +78,7 @@ const ConsultationsDerivation = () => {
   };
 
   const handleCreate = () => {
-    if (!can("canCreateConsultations")) {
+    if (!can("canCreateConsultation")) {
       setError("No tienes permisos para agregar consultas");
       setTimeout(() => setError(""), 3000);
       return;
@@ -104,7 +104,7 @@ const ConsultationsDerivation = () => {
   };
 
   const handleAddMedication = (consultation) => {
-    if (!can("canEditCOnsultations")) {
+    if (!can("canEditConsultations")) {
       setError("No tienes permisos para agregar medicamentos");
       setTimeout(() => setError(""), 3000);
       return;
@@ -127,10 +127,10 @@ const ConsultationsDerivation = () => {
     const searchLower = searchTerm.toLowerCase();
 
     return (
-      (consult.departmentName?.toLowerCase() || "").includes(searchLower) ||
+      (consult.departmentToName?.toLowerCase() || "").includes(searchLower) ||
       (consult.dateTimeCDer?.toLowerCase() || "").includes(searchLower) ||
-      (consult.doctorFullName?.toLowerCase() || "").includes(searchLower) ||
-      (consult.patientFullName?.toLowerCase() || "").includes(searchLower) ||
+      (consult.doctorName?.toLowerCase() || "").includes(searchLower) ||
+      (consult.patientName?.toLowerCase() || "").includes(searchLower) ||
       (consult.diagnosis?.toLowerCase() || "").includes(searchLower)
     );
   });
@@ -150,14 +150,14 @@ const ConsultationsDerivation = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Building2 className="text-cyan-600" />
-            Consultas por Remisión Médica
+            Consultas por Derivación Médica
           </h1>
           <p className="text-gray-600 mt-1">
-            Gestiona las consultas por remisión médica de los pacientes.
+            Gestiona las consultas por derivación médica de los pacientes.
           </p>
         </div>
         
-        <ProtectedComponent requiredPermission="canCreateConsultations">
+        <ProtectedComponent requiredPermission="canCreateConsultation">
           <button
             onClick={handleCreate}
             className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
@@ -181,14 +181,9 @@ const ConsultationsDerivation = () => {
       </div>
 
       <h2 className="text-2xl font-bold text-gray-900 mt-8">
-        Analíticas Rápidas
+        Consultas
       </h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Componente para el rango de fechas, con el service como prop */}
-        <ConsultationsDateRangeFilter service={consultationDerivationService} />
-
-        {/* Componente para las últimas 10, con el service como prop */}
-        <RecentConsultationsWidget service={consultationDerivationService} />
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
       </div>      
 
       {/* Alerts */}
@@ -286,17 +281,17 @@ const ConsultationsDerivation = () => {
               </div>
             )}
 
-            {consultation.departmentName && (
+            {consultation.departmentToName && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Building2 className="w-4 h-4" />
-                <span>{consultation.departmentName}</span>
+                <span>{consultation.departmentToName}</span>
               </div>
             )}
 
-            {consultation.doctorFullName && (
+            {consultation.doctorName && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Stethoscope className="w-4 h-4" />
-                <span>Dr. {consultation.doctorFullName}</span>
+                <span>Dr. {consultation.doctorName}</span>
               </div>
             )}
 
