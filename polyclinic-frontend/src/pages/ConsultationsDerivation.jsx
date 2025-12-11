@@ -1,9 +1,8 @@
 // pages/ConsultationsDerivation.jsx
 
-import React, { useEffect, useState } from 'react';
-
+import React, { useState, useEffect } from "react";
 import {
- Building2,
+  Building2,
   Plus,
   SquarePen,
   Search,
@@ -15,20 +14,27 @@ import {
   Stethoscope,
   FileText,
   Pill,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 
-import  {consultationDerivationService}  from "../services/consultationDerivationService";
-import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
-
+import { consultationDerivationService } from "../services/consultationDerivationService";
+import { 
+  ProtectedComponent,
+  usePermissions 
+} from '../middleware/PermissionMiddleware';
 import ModalConsultationDerivation from '../components/ModalConsultationDerivation';
-import ModalMedicationsDerivation  from '../components/ModalMedicationsDerivation';
+import ModalMedicationsDerivation from '../components/ModalMedicationsDerivation';
+import Pagination from "../components/Pagination";
 
 import medicationDerivationsService from '../services/medicationDerivationService';
+import medicationService from '../services/medicationService';
 
 const ConsultationsDerivation = () => {
   const { can } = usePermissions();
   const [consultations, setConsultations] = useState([]);
   const [consultationMedications, setConsultationMedications] = useState({});
+  const [expandedCards, setExpandedCards] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showModalConsultation, setShowModalConsultation] = useState(false);
@@ -39,18 +45,23 @@ const ConsultationsDerivation = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
+
   useEffect(() => {
     loadConsultations();
   }, []);
 
-  const loadConsultations = async (filters = {}) => {
-    setLoading(true);
+  const loadConsultations = async () => {
     try {
       setLoading(true);
       const data = await consultationDerivationService.getAll();
+      console.log("Consultas cargadas:", data);
       setConsultations(data);
-    
-      await loadAllConsultationMedications(data);
+      
+      // Cargar medicamentos para cada consulta
+      await loadAllMedications(data);
     } catch (err) {
       const errorMessage = err.message || "Error al cargar consultas";
       setError(errorMessage);
@@ -59,24 +70,37 @@ const ConsultationsDerivation = () => {
     }
   };
 
-  const loadAllConsultationMedications = async (consultationsList) => {
+  const loadAllMedications = async (consultationsList) => {
     try {
       const medicationsMap = {};
-      const allMedications = await medicationDerivationsService.getAll();
-
+      const allMedicationReferrals = await medicationDerivationsService.getAll();
+      const allMedicationsInfo = await medicationService.getAll();
+      
       consultationsList.forEach(consultation => {
         const consultId = consultation.consultationDerivationId || consultation.id;
-        medicationsMap[consultId] = allMedications.filter(med => med.consultationDerivationId === consultId);
+        const consultationMeds = allMedicationReferrals.filter(
+          med => med.consultationDerivationId === consultId
+        );
+        
+        // Enriquecer con información completa del medicamento
+        medicationsMap[consultId] = consultationMeds.map(medDer => {
+          const medInfo = allMedicationsInfo.find(m => m.medicationId === medDer.medicationId);
+          return {
+            ...medDer,
+            commercialName: medInfo?.commercialName || 'Desconocido',
+            scientificName: medInfo?.scientificName || ''
+          };
+        });
       });
-
+      
       setConsultationMedications(medicationsMap);
     } catch (err) {
-      console.error("Error al cargar medicamentos:", err);
+      console.error('Error al cargar medicamentos:', err);
     }
   };
 
   const handleCreate = () => {
-    if (!can("canCreateConsultation")) {
+    if (!can("canCreateConsultations")) {
       setError("No tienes permisos para agregar consultas");
       setTimeout(() => setError(""), 3000);
       return;
@@ -103,24 +127,35 @@ const ConsultationsDerivation = () => {
 
   const handleAddMedication = (consultation) => {
     if (!can("canEditConsultations")) {
-      setError("No tienes permisos para agregar medicamentos");
+      setError("No tienes permisos para recetar medicamentos");
       setTimeout(() => setError(""), 3000);
       return;
     }
 
+    const consultId = consultation.consultationDerivationId || consultation.id;
+    const existingMeds = consultationMedications[consultId] || [];
+    
     setSelectedConsultation(consultation);
-    setSelectedMedicationMode("create");
+    setSelectedMedicationMode(existingMeds.length > 0 ? 'edit' : 'create');
     setShowModalMedication(true);
     setError("");
-  }
+  };
 
   const handleMedicationSuccess = () => {
-    setSuccess("Medicamento recetado exitosamente");
+    setSuccess("Medicamentos recetados exitosamente");
     setTimeout(() => setSuccess(""), 3000);
     loadConsultations();
-  }
+  };
 
-  // Filtra las consultas (nombres corregidos)
+  // Función para alternar el estado expandido de una tarjeta
+  const toggleExpandCard = (consultId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [consultId]: !prev[consultId]
+    }));
+  };
+
+  // Filtra las consultas
   const filteredConsultations = consultations.filter((consult) => {
     const searchLower = searchTerm.toLowerCase();
 
@@ -133,12 +168,25 @@ const ConsultationsDerivation = () => {
     );
   });
 
+  // Resetear a página 1 cuando cambie searchTerm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Calcular items para la página actual
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedConsultations = filteredConsultations.slice(startIndex, endIndex);
+
+  // Calcular total de páginas
+  const totalPages = Math.ceil(filteredConsultations.length / ITEMS_PER_PAGE);
+
   if (loading) {
-      return (
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-600" />
-        </div>
-      );
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-600" />
+      </div>
+    );
   }
 
   return (
@@ -155,7 +203,7 @@ const ConsultationsDerivation = () => {
           </p>
         </div>
         
-        <ProtectedComponent requiredPermission="canCreateConsultation">
+        <ProtectedComponent requiredPermission="canCreateConsultations">
           <button
             onClick={handleCreate}
             className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
@@ -181,8 +229,6 @@ const ConsultationsDerivation = () => {
       <h2 className="text-2xl font-bold text-gray-900 mt-8">
         Consultas
       </h2>
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-      </div>      
 
       {/* Alerts */}
       {error && (
@@ -205,18 +251,18 @@ const ConsultationsDerivation = () => {
         </div>
       )}  
 
-      <ProtectedComponent requiredPermission="canCreateConsultation">
+      {!can("canCreateConsultations") && (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-3">
           <AlertCircle className="text-yellow-600 flex-shrink-0" />
           <p className="text-yellow-800">
             Solo el doctor principal agrega o edita consultas.
           </p>
         </div>
-      </ProtectedComponent>
+      )}
 
       {/* Consultations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredConsultations.map((consultation) => {
+        {paginatedConsultations.map((consultation) => {
           const consultId = consultation.consultationDerivationId || consultation.id;
           const medications = consultationMedications[consultId] || [];
           const hasMedications = medications.length > 0;   
@@ -226,114 +272,147 @@ const ConsultationsDerivation = () => {
               key={consultation.id}
               className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
             >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-cyan-600" />
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-6 h-6 text-cyan-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {consultation.patientName || "Sin nombre"}
+                    </h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {consultation.patientName || "Sin nombre"}
-                  </h3>
+                
+                {/* Botones de Acción */}
+                <div className="flex gap-2">
+                  <ProtectedComponent requiredPermission="canEditConsultations">
+                    <button
+                      onClick={() => handleAddMedication(consultation)}
+                      className={`p-2 rounded-lg transition ${
+                        hasMedications 
+                          ? 'text-green-600 bg-green-50 hover:bg-green-100' 
+                          : 'text-purple-600 hover:bg-purple-50'
+                      }`}
+                      title={hasMedications ? `Editar Receta (${medications.length} medicamentos)` : "Recetar Medicamentos"}
+                    >
+                      <Pill className="w-4 h-4" />
+                    </button>
+                  </ProtectedComponent>  
+                        
+                  <ProtectedComponent requiredPermission="canEditConsultations">
+                    <button
+                      onClick={() => handleEdit(consultation)}
+                      className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
+                      title="Editar"
+                    >
+                      <SquarePen className="w-4 h-4" />
+                    </button>
+                  </ProtectedComponent>
                 </div>
-              </div>
-              
-            {/* Botones de Acción */}
-            <div className="flex gap-2">
-              <ProtectedComponent requiredPermission="canEditConsultations">
-                <button
-                  onClick={() => handleAddMedication(consultation)}
-                  className={`p-2 rounded-lg transition ${
-                    hasMedications 
-                      ? 'text-green-600 bg-green-50 hover:bg-green-100' 
-                      : 'text-purple-600 hover:bg-purple-50'
-                  }`}
-                  title={hasMedications ? `Editar Receta (${medications.length} medicamentos)` : "Recetar Medicamentos"}
-                >
-                  <Pill className="w-4 h-4" />
-                </button>
-              </ProtectedComponent>  
-                    
-              <ProtectedComponent requiredPermission="canEditConsultations">
-                <button
-                  onClick={() => handleEdit(consultation)}
-                  className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
-                  title="Editar"
-                >
-                  <SquarePen className="w-4 h-4" />
-                </button>
-              </ProtectedComponent>
-            </div>
-          </div> 
+              </div> 
           
-          {/* Información de la consulta */}
-          <div className="space-y-2">
-            {hasMedications && (
-              <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-green-800">
-                  <Pill className="w-4 h-4" />
-                  <span className="font-medium">
-                    {medications.length} medicamento{medications.length !== 1 ? 's' : ''} recetado{medications.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              </div>
-            )}
+              {/* Información de la consulta */}
+              <div className="space-y-2">
+                {hasMedications && (
+                  <div className="mb-3">
+                    <button
+                      onClick={() => toggleExpandCard(consultId)}
+                      className="w-full p-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 text-sm text-green-800">
+                        <Pill className="w-4 h-4" />
+                        <span className="font-medium">
+                          {medications.length} medicamento{medications.length !== 1 ? 's' : ''} recetado{medications.length !== 1 ? 's' : ''}
+                        </span>
+                        {expandedCards[consultId] ? (
+                          <ChevronDown className="w-4 h-4 ml-auto" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 ml-auto" />
+                        )}
+                      </div>
+                    </button>
+                    
+                    {/* Lista de medicamentos expandida */}
+                    {expandedCards[consultId] && (
+                      <div className="mt-2 space-y-2 pl-2">
+                        {medications.map((med, index) => (
+                          <div key={index} className="p-2 bg-white border border-green-100 rounded text-sm">
+                            <div className="font-medium text-gray-800">{med.commercialName || med.medicationName || 'Medicamento'}</div>
+                            <div className="text-gray-600">Cantidad: {med.quantity || 'N/A'}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            {consultation.departmentToName && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Building2 className="w-4 h-4" />
-                <span>{consultation.departmentToName}</span>
-              </div>
-            )}
+                {consultation.departmentToName && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Building2 className="w-4 h-4" />
+                    <span>{consultation.departmentToName}</span>
+                  </div>
+                )}
 
-            {consultation.doctorName && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Stethoscope className="w-4 h-4" />
-                <span>Dr. {consultation.doctorName}</span>
-              </div>
-            )}
+                {consultation.doctorName && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Stethoscope className="w-4 h-4" />
+                    <span>Dr. {consultation.doctorName}</span>
+                  </div>
+                )}
 
-            {consultation.dateTimeCDer && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  {new Date(consultation.dateTimeCDer).toLocaleDateString(
-                    "es-ES",
-                    {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      timeZone: "UTC", // <--- FUERZA la visualización en UTC
-                    }
-                  )}
-                </span>
-              </div>
-            )} 
+                {consultation.dateTimeCDer && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      {new Date(consultation.dateTimeCDer).toLocaleDateString(
+                        "es-ES",
+                        {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          timeZone: "UTC",
+                        }
+                      )}
+                    </span>
+                  </div>
+                )} 
 
-            {consultation.diagnosis && (
-              <div className="flex items-start gap-2 text-sm text-gray-600 mt-3 pt-3 border-t">
-                <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span className="line-clamp-2">{consultation.diagnosis}</span>
+                {consultation.diagnosis && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600 mt-3 pt-3 border-t">
+                    <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span className="line-clamp-2">{consultation.diagnosis}</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-        );
-      })}
-    </div>
-
-    {filteredConsultations.length === 0 && (
-      <div className="text-center py-12">
-        <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500 text-lg">
-          {searchTerm
-            ? "No se encontraron consultas con ese criterio"
-            : "No hay consultas registradas"}
-        </p>
+            </div>
+          );
+        })}
       </div>
-    )}
 
-    {/* Modal Create Consultation */}
+      {/* Paginación */}
+      {filteredConsultations.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredConsultations.length}
+        />
+      )}
+
+      {filteredConsultations.length === 0 && (
+        <div className="text-center py-12">
+          <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500 text-lg">
+            {searchTerm
+              ? "No se encontraron consultas con ese criterio"
+              : "No hay consultas registradas"}
+          </p>
+        </div>
+      )}
+
+      {/* Modal Create Consultation */}
       <ModalConsultationDerivation
         modalMode={modalMode}
         selected={selectedConsultation}
@@ -356,7 +435,7 @@ const ConsultationsDerivation = () => {
         }
       />
     </div>            
-  )
+  );
 };
 
 export default ConsultationsDerivation;
