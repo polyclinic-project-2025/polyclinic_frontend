@@ -21,8 +21,8 @@ const Reportes = () => {
         </div>
       </div>
 
-      {/* Grid con los dos widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Contenedor con los dos widgets uno debajo del otro */}
+      <div className="flex flex-col gap-6">
         {/* Widget de Últimas 10 Consultas */}
         <RecentConsultationsWidget service={analyticsService} />
         
