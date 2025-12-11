@@ -1,4 +1,5 @@
-// pages/Consultations.jsx (CORREGIDO FINAL)
+// pages/ConsultationsReferral.jsx
+
 import React, { useState, useEffect } from "react";
 import {
   Building2,
@@ -15,8 +16,8 @@ import {
   Pill,
   ChevronRight,
   ChevronDown,
-  Download,
 } from "lucide-react";
+
 import { consultationReferralService } from "../services/consultationReferralService";
 import {
   ProtectedComponent,
@@ -24,18 +25,16 @@ import {
 } from "../middleware/PermissionMiddleware";
 import ModalConsultation from "../components/ModalConsultation";
 import ModalMedicationReferral from "../components/ModalMedicationReferral";
+import Pagination from "../components/Pagination";
 
-import RecentConsultationsWidget from "../components/RecentConsultationsWidget";
-import ConsultationsDateRangeFilter from "../components/ConsultationsDateRangeFilter"; // Usamos la versión V2 corregida
 import medicationReferralService from "../services/medicationReferralService";
 import medicationService from "../services/medicationService";
-import Pagination from "../components/Pagination";
 
 const Consultations = () => {
   const { can } = usePermissions();
   const [consultations, setConsultations] = useState([]);
   const [consultationMedications, setConsultationMedications] = useState({});
-  const [expandedCards, setExpandedCards] = useState({}); // Estado para controlar tarjetas expandidas
+  const [expandedCards, setExpandedCards] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showModalConsultation, setShowModalConsultation] = useState(false);
@@ -58,7 +57,7 @@ const Consultations = () => {
     try {
       setLoading(true);
       const data = await consultationReferralService.getAll();
-      console.log("Consultas cargadas:", data); // Para debugging
+      console.log("Consultas cargadas:", data);
       setConsultations(data);
       
       // Cargar medicamentos para cada consulta
@@ -145,40 +144,7 @@ const Consultations = () => {
   const handleMedicationSuccess = () => {
     setSuccess("Medicamentos recetados exitosamente");
     setTimeout(() => setSuccess(""), 3000);
-    loadConsultations(); // Recargar para actualizar la visualización
-  };
-
-  const handleExportConsultations = async () => {
-    if (!can('canExportConsultations')) {
-      setError('No tienes permisos para exportar consultas');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const url = await consultationReferralService.exportToPdf();
-      
-      // Crear un enlace temporal y hacer clic
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `consultas_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      // Limpiar la URL cuando ya no se necesite
-      URL.revokeObjectURL(url);
-      
-      setSuccess('Consultas exportadas exitosamente');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      const errorMessage = err.message || 'Error al exportar consultas';
-      setError(errorMessage);
-      setTimeout(() => setError(''), 5000);
-    } finally {
-      setLoading(false);
-    }
+    loadConsultations();
   };
 
   // Función para alternar el estado expandido de una tarjeta
@@ -189,7 +155,7 @@ const Consultations = () => {
     }));
   };
 
-  // Filtra las consultas (nombres corregidos)
+  // Filtra las consultas
   const filteredConsultations = consultations.filter((consult) => {
     const searchLower = searchTerm.toLowerCase();
 
@@ -237,28 +203,15 @@ const Consultations = () => {
           </p>
         </div>
 
-        <div className="flex gap-3">
-          <ProtectedComponent requiredPermission="canExportConsultations">
-            <button
-              onClick={handleExportConsultations}
-              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-lg"
-              disabled={loading}
-            >
-              <Download className="w-5 h-5" />
-              Exportar PDF
-            </button>
-          </ProtectedComponent>
-
-          <ProtectedComponent requiredPermission="canCreateConsultations">
-            <button
-              onClick={handleCreate}
-              className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
-            >
-              <Plus className="w-5 h-5" />
-              Agregar Consulta
-            </button>
-          </ProtectedComponent>
-        </div>
+        <ProtectedComponent requiredPermission="canCreateConsultations">
+          <button
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
+          >
+            <Plus className="w-5 h-5" />
+            Agregar Consulta
+          </button>
+        </ProtectedComponent>
       </div>
 
       {/* Search Bar */}
@@ -298,14 +251,14 @@ const Consultations = () => {
         </div>
       )}
 
-      <ProtectedComponent requiredPermission="canCreateConsultation">
+      {!can("canCreateConsultations") && (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-3">
           <AlertCircle className="text-yellow-600 flex-shrink-0" />
           <p className="text-yellow-800">
             Solo el doctor principal agrega o edita consultas.
           </p>
         </div>
-      </ProtectedComponent>
+      )}
 
       {/* Consultations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -319,119 +272,120 @@ const Consultations = () => {
               key={consultation.id}
               className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
             >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-cyan-600" />
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-6 h-6 text-cyan-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {consultation.patientFullName || "Sin nombre"}
+                    </h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {consultation.patientFullName || "Sin nombre"}
-                  </h3>
-                </div>
-              </div>
-              
-              {/* Botones de Acción */}
-              <div className="flex gap-2">
-                <ProtectedComponent requiredPermission="canEditConsultations">
-                  <button
-                    onClick={() => handleAddMedication(consultation)}
-                    className={`p-2 rounded-lg transition ${
-                      hasMedications 
-                        ? 'text-green-600 bg-green-50 hover:bg-green-100' 
-                        : 'text-purple-600 hover:bg-purple-50'
-                    }`}
-                    title={hasMedications ? `Editar Receta (${medications.length} medicamentos)` : "Recetar Medicamentos"}
-                  >
-                    <Pill className="w-4 h-4" />
-                  </button>
-                </ProtectedComponent>
-
-                <ProtectedComponent requiredPermission="canEditConsultations">
-                  <button
-                    onClick={() => handleEdit(consultation)}
-                    className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
-                    title="Editar"
-                  >
-                    <SquarePen className="w-4 h-4" />
-                  </button>
-                </ProtectedComponent>
-              </div>
-            </div>
-
-            {/* Información de la consulta */}
-            <div className="space-y-2">
-              {hasMedications && (
-                <div className="mb-3">
-                  <button
-                    onClick={() => toggleExpandCard(consultId)}
-                    className="w-full p-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-2 text-sm text-green-800">
+                
+                {/* Botones de Acción */}
+                <div className="flex gap-2">
+                  <ProtectedComponent requiredPermission="canEditConsultations">
+                    <button
+                      onClick={() => handleAddMedication(consultation)}
+                      className={`p-2 rounded-lg transition ${
+                        hasMedications 
+                          ? 'text-green-600 bg-green-50 hover:bg-green-100' 
+                          : 'text-purple-600 hover:bg-purple-50'
+                      }`}
+                      title={hasMedications ? `Editar Receta (${medications.length} medicamentos)` : "Recetar Medicamentos"}
+                    >
                       <Pill className="w-4 h-4" />
-                      <span className="font-medium">
-                        {medications.length} medicamento{medications.length !== 1 ? 's' : ''} recetado{medications.length !== 1 ? 's' : ''}
-                      </span>
-                      {expandedCards[consultId] ? (
-                        <ChevronDown className="w-4 h-4 ml-auto" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 ml-auto" />
-                      )}
-                    </div>
-                  </button>
-                  
-                  {/* Lista de medicamentos expandida */}
-                  {expandedCards[consultId] && (
-                    <div className="mt-2 space-y-2 pl-2">
-                      {medications.map((med, index) => (
-                        <div key={index} className="p-2 bg-white border border-green-100 rounded text-sm">
-                          <div className="font-medium text-gray-800">{med.commercialName || med.medicationName || 'Medicamento'}</div>
-                          <div className="text-gray-600">Cantidad: {med.quantity || 'N/A'}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-              {consultation.departmentName && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Building2 className="w-4 h-4" />
-                  <span>{consultation.departmentName}</span>
-                </div>
-              )}
+                    </button>
+                  </ProtectedComponent>
 
-              {consultation.doctorFullName && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Stethoscope className="w-4 h-4" />
-                  <span>Dr. {consultation.doctorFullName}</span>
+                  <ProtectedComponent requiredPermission="canEditConsultations">
+                    <button
+                      onClick={() => handleEdit(consultation)}
+                      className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
+                      title="Editar"
+                    >
+                      <SquarePen className="w-4 h-4" />
+                    </button>
+                  </ProtectedComponent>
                 </div>
-              )}
+              </div>
 
-              {consultation.dateTimeCRem && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    {new Date(consultation.dateTimeCRem).toLocaleDateString(
-                      "es-ES",
-                      {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        timeZone: "UTC", // <--- FUERZA la visualización en UTC
-                      }
+              {/* Información de la consulta */}
+              <div className="space-y-2">
+                {hasMedications && (
+                  <div className="mb-3">
+                    <button
+                      onClick={() => toggleExpandCard(consultId)}
+                      className="w-full p-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 text-sm text-green-800">
+                        <Pill className="w-4 h-4" />
+                        <span className="font-medium">
+                          {medications.length} medicamento{medications.length !== 1 ? 's' : ''} recetado{medications.length !== 1 ? 's' : ''}
+                        </span>
+                        {expandedCards[consultId] ? (
+                          <ChevronDown className="w-4 h-4 ml-auto" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 ml-auto" />
+                        )}
+                      </div>
+                    </button>
+                    
+                    {/* Lista de medicamentos expandida */}
+                    {expandedCards[consultId] && (
+                      <div className="mt-2 space-y-2 pl-2">
+                        {medications.map((med, index) => (
+                          <div key={index} className="p-2 bg-white border border-green-100 rounded text-sm">
+                            <div className="font-medium text-gray-800">{med.commercialName || med.medicationName || 'Medicamento'}</div>
+                            <div className="text-gray-600">Cantidad: {med.quantity || 'N/A'}</div>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  </span>
-                </div>
-              )}
+                  </div>
+                )}
 
-              {consultation.diagnosis && (
-                <div className="flex items-start gap-2 text-sm text-gray-600 mt-3 pt-3 border-t">
-                  <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span className="line-clamp-2">{consultation.diagnosis}</span>
-                </div>
-              )}
+                {consultation.departmentName && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Building2 className="w-4 h-4" />
+                    <span>{consultation.departmentName}</span>
+                  </div>
+                )}
+
+                {consultation.doctorFullName && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Stethoscope className="w-4 h-4" />
+                    <span>Dr. {consultation.doctorFullName}</span>
+                  </div>
+                )}
+
+                {consultation.dateTimeCRem && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      {new Date(consultation.dateTimeCRem).toLocaleDateString(
+                        "es-ES",
+                        {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          timeZone: "UTC",
+                        }
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                {consultation.diagnosis && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600 mt-3 pt-3 border-t">
+                    <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span className="line-clamp-2">{consultation.diagnosis}</span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
           );
         })}
       </div>
