@@ -3,8 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, Plus, Trash2, Pill } from 'lucide-react';
 import medicationService from '../services/medicationService';
 import medicationReferralService from '../services/medicationReferralService';
+import stockDepartmentService from '../services/stockDepartmentService';
+import { consultationReferralService } from '../services/consultationReferralService';
 
-const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mode = 'create', existingMedications = [] }) => {
+const ModalMedicationReferral = ({ 
+  show, 
+  onClose, 
+  consultationId, 
+  onSuccess, 
+  mode = 'create', 
+  existingMedications = [] 
+}) => {
   const [medications, setMedications] = useState([]);
   const [selectedMedications, setSelectedMedications] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,20 +22,66 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (show) {
-      loadMedications();
+    if (show && consultationId) {
+      loadMedicationsWithStock();
       if (mode === 'edit' && existingMedications.length > 0) {
         loadExistingMedications();
       }
     }
-  }, [show, mode, existingMedications]);
+  }, [show, consultationId, mode, existingMedications]);
+
+  // ✨ IDÉNTICO A DERIVATION: Cargar medicamentos con stock del departamento
+  const loadMedicationsWithStock = async () => {
+    try {
+      setLoading(true);
+      
+      // 1. Obtener la consulta para saber el departamento
+      const consultation = await consultationReferralService.getById(consultationId);
+      const deptId = consultation.departmentToId;
+      
+      if (!deptId) {
+        setError('No se pudo obtener el departamento de la consulta');
+        setLoading(false);
+        return;
+      }
+      
+      // 2. Obtener stock del departamento
+      const stockList = await stockDepartmentService.getStockByDepartment(deptId);
+      
+      // 3. Filtrar solo los que tienen stock > 0
+      const medicationsWithStock = stockList.filter(stock => stock.quantity > 0);
+      
+      // 4. Enriquecer con información del medicamento
+      const enrichedMedications = await Promise.all(
+        medicationsWithStock.map(async (stock) => {
+          try {
+            const medInfo = await medicationService.getById(stock.medicationId);
+            return {
+              ...medInfo,
+              availableQuantity: stock.quantity
+            };
+          } catch (err) {
+            return null;
+          }
+        })
+      );
+      
+      const validMedications = enrichedMedications.filter(med => med !== null);
+      setMedications(validMedications);
+      
+    } catch (err) {
+      console.error('Error al cargar medicamentos con stock:', err);
+      setError('Error al cargar medicamentos disponibles');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadExistingMedications = async () => {
     try {
       setLoading(true);
       const allMeds = await medicationService.getAll();
       
-      // Mapear los medicamentos existentes con su información completa
       const mappedMedications = existingMedications.map(existing => {
         const medInfo = allMeds.find(m => m.medicationId === existing.medicationId);
         return {
@@ -46,20 +101,7 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
     }
   };
 
-  const loadMedications = async () => {
-    try {
-      setLoading(true);
-      const data = await medicationService.getAll();
-      setMedications(data);
-    } catch (err) {
-      setError('Error al cargar medicamentos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAddMedication = (medication) => {
-    // Verificar si ya está agregado
     if (selectedMedications.find(m => m.medicationId === medication.medicationId)) {
       setError('Este medicamento ya está agregado');
       setTimeout(() => setError(''), 3000);
@@ -72,7 +114,8 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
         medicationId: medication.medicationId,
         commercialName: medication.commercialName,
         scientificName: medication.scientificName,
-        quantity: 1
+        quantity: 1,
+        availableQuantity: medication.availableQuantity
       }
     ]);
   };
@@ -97,18 +140,13 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (selectedMedications.length === 0) {
-      setError('Debe agregar al menos un medicamento');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    // Validar que todas las cantidades sean mayores a 0
-    const hasInvalidQuantity = selectedMedications.some(m => m.quantity <= 0);
-    if (hasInvalidQuantity) {
-      setError('Todas las cantidades deben ser mayores a 0');
-      setTimeout(() => setError(''), 3000);
-      return;
+    if (selectedMedications.length > 0) {
+      const hasInvalidQuantity = selectedMedications.some(m => m.quantity <= 0);
+      if (hasInvalidQuantity) {
+        setError('Todas las cantidades deben ser mayores a 0');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
     }
 
     if (!consultationId) {
@@ -121,32 +159,137 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
     setError('');
 
     try {
-      console.log('Consultation ID:', consultationId); // Debug
-      
       if (mode === 'edit') {
-        // Modo edición: eliminar todos los existentes y crear nuevos
-        for (const existing of existingMedications) {
-          await medicationReferralService.delete(existing.medicationReferralId);
-        }
+        await handleEditMode();
+      } else {
+        await handleCreateMode();
       }
       
-      // Crear los medicamentos seleccionados
-      for (const med of selectedMedications) {
+      onSuccess?.();
+      handleClose();
+      
+    } catch (err) {
+      console.error('Error general:', err);
+      setError(err.message || 'Error al procesar la receta médica');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCreateMode = async () => {
+    if (selectedMedications.length === 0) {
+      throw new Error('Debe agregar al menos un medicamento');
+    }
+
+    for (let i = 0; i < selectedMedications.length; i++) {
+      const med = selectedMedications[i];
+      const payload = {
+        quantity: med.quantity,
+        consultationReferralId: consultationId,
+        medicationId: med.medicationId
+      };
+      
+      try {
+        console.log(`Creando medicamento ${i + 1}/${selectedMedications.length}:`, payload);
+        await medicationReferralService.create(payload);
+      } catch (medError) {
+        console.error(`Error al crear medicamento ${med.commercialName}:`, medError);
+        
+        const errorMsg = medError.message || 'Error desconocido';
+        
+        if (errorMsg.includes('Stock insuficiente') || errorMsg.includes('insuficiente')) {
+          throw new Error(`❌ ${med.commercialName}: ${errorMsg}`);
+        } else if (errorMsg.includes('No existe stock')) {
+          throw new Error(`❌ ${med.commercialName}: No hay stock disponible en este departamento`);
+        } else {
+          throw new Error(`❌ ${med.commercialName}: ${errorMsg}`);
+        }
+      }
+    }
+  };
+
+  const handleEditMode = async () => {
+    const originalMeds = existingMedications || [];
+    const currentMeds = selectedMedications;
+
+    const toUpdate = [];
+    const toDelete = [];
+    const toCreate = [];
+
+    originalMeds.forEach(original => {
+      const current = currentMeds.find(m => m.medicationId === original.medicationId);
+      
+      if (!current) {
+        toDelete.push(original);
+      } else if (current.quantity !== original.quantity) {
+        toUpdate.push({
+          medicationReferralId: original.medicationReferralId,
+          medicationId: current.medicationId,
+          quantity: current.quantity,
+          commercialName: current.commercialName
+        });
+      }
+    });
+
+    currentMeds.forEach(current => {
+      const isNew = !originalMeds.find(o => o.medicationId === current.medicationId);
+      if (isNew) {
+        toCreate.push(current);
+      }
+    });
+
+    console.log('📊 Operaciones a realizar:', { toUpdate, toDelete, toCreate });
+
+    for (const med of toDelete) {
+      try {
+        console.log(`🗑️ Eliminando: ${med.medicationReferralId}`);
+        await medicationReferralService.delete(med.medicationReferralId);
+      } catch (error) {
+        throw new Error(`Error al eliminar ${med.commercialName || 'medicamento'}: ${error.message}`);
+      }
+    }
+
+    for (const med of toUpdate) {
+      try {
+        console.log(`🔄 Actualizando: ${med.medicationReferralId} → Cantidad: ${med.quantity}`);
+        
+        const payload = {
+          quantity: med.quantity
+        };
+        
+        await medicationReferralService.update(med.medicationReferralId, payload);
+      } catch (error) {
+        const errorMsg = error.message || 'Error desconocido';
+        
+        if (errorMsg.includes('Stock insuficiente') || errorMsg.includes('insuficiente')) {
+          throw new Error(`❌ ${med.commercialName}: ${errorMsg}`);
+        } else {
+          throw new Error(`❌ Error al actualizar ${med.commercialName}: ${errorMsg}`);
+        }
+      }
+    }
+
+    // EJECUTAR CREACIONES
+    for (const med of toCreate) {
+      try {
+        console.log(`➕ Creando nuevo: ${med.commercialName}`);
+        
         const payload = {
           quantity: med.quantity,
           consultationReferralId: consultationId,
           medicationId: med.medicationId
         };
-        console.log('Enviando payload:', payload); // Debug
+        
         await medicationReferralService.create(payload);
+      } catch (error) {
+        const errorMsg = error.message || 'Error desconocido';
+        
+        if (errorMsg.includes('Stock insuficiente') || errorMsg.includes('insuficiente')) {
+          throw new Error(`❌ ${med.commercialName}: ${errorMsg}`);
+        } else {
+          throw new Error(`❌ Error al crear ${med.commercialName}: ${errorMsg}`);
+        }
       }
-
-      onSuccess?.();
-      handleClose();
-    } catch (err) {
-      setError(err.message || 'Error al agregar medicamentos');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -205,6 +348,11 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">{med.commercialName}</p>
                         <p className="text-sm text-gray-600 italic">{med.scientificName}</p>
+                        {med.availableQuantity && (
+                          <p className="text-xs text-green-600 mt-1">
+                            📦 Stock disponible: {med.availableQuantity} unidades
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <label className="text-sm text-gray-600">Cantidad:</label>
@@ -232,7 +380,7 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
             {/* Búsqueda de Medicamentos */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Buscar Medicamentos
+                Buscar Medicamentos con Stock
               </h3>
               <input
                 type="text"
@@ -242,7 +390,6 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent mb-3"
               />
 
-              {/* Lista de Medicamentos */}
               <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
@@ -268,8 +415,8 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
                           <div>
                             <p className="font-medium text-gray-900">{medication.commercialName}</p>
                             <p className="text-sm text-gray-600 italic">{medication.scientificName}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Stock: {medication.quantityWarehouse} unidades
+                            <p className="text-xs text-green-600 mt-1 font-medium">
+                              ✅ Stock: {medication.availableQuantity} unidades
                             </p>
                           </div>
                           {!isSelected && (
@@ -281,16 +428,25 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
                   })
                 ) : (
                   <div className="p-8 text-center text-gray-500">
-                    {searchTerm ? 'No se encontraron medicamentos' : 'Escribe para buscar medicamentos'}
+                    {loading 
+                      ? 'Cargando...' 
+                      : searchTerm 
+                        ? 'No se encontraron medicamentos con ese criterio' 
+                        : 'No hay medicamentos con stock en este departamento'}
                   </div>
                 )}
               </div>
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                <AlertCircle className="text-red-600 w-5 h-5 flex-shrink-0" />
-                <p className="text-red-800 text-sm">{error}</p>
+              <div className="p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="text-red-600 w-6 h-6 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-red-900 mb-1">Error</h4>
+                    <p className="text-red-800 text-sm whitespace-pre-line">{error}</p>
+                  </div>
+                </div>
               </div>
             )}
           </form>
@@ -311,7 +467,10 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
               type="button"
               onClick={handleSubmit}
               className="flex-1 px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
-              disabled={submitting || selectedMedications.length === 0}
+              disabled={
+                submitting || 
+                (mode === 'create' && selectedMedications.length === 0)
+              }
             >
               {submitting ? (
                 <>
@@ -322,8 +481,12 @@ const ModalMedicationReferral = ({ show, onClose, consultationId, onSuccess, mod
                 <>
                   <Pill className="w-5 h-5" />
                   {mode === 'edit' 
-                    ? `Actualizar Receta (${selectedMedications.length})` 
-                    : `Recetar Medicamentos (${selectedMedications.length})`
+                    ? selectedMedications.length === 0 
+                      ? '🗑️ Eliminar Toda la Receta'
+                      : `Actualizar Receta (${selectedMedications.length})`
+                    : selectedMedications.length === 0
+                      ? 'Agregar Medicamentos'
+                      : `Recetar Medicamentos (${selectedMedications.length})`
                   }
                 </>
               )}

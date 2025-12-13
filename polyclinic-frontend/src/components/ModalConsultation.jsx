@@ -52,7 +52,6 @@ const ModalConsultation = ({
           const departmentId = head.departmentId;
           console.log(departmentId + " is departmentId");
           
-
           departmentData = 
           {
             departmentId: departmentId,
@@ -90,8 +89,6 @@ const ModalConsultation = ({
           diagnostic: selected.diagnosis,
         };
         console.log(editFormData.deparmentId + " editFormData");
-        
-        
         
         setFormData(editFormData);
       } else if (isOpen && modalMode === "create" && user?.id) {
@@ -181,11 +178,6 @@ const ModalConsultation = ({
       if (!departmentHeadId) {
         throw new Error("No se pudo obtener el jefe de departamento");
       }
-
-      // Mantener la hora local pero formatearla como si fuera UTC
-      const localDate = new Date(formData.dateTime);
-      const offsetMs = localDate.getTimezoneOffset() * 60000;
-      const localAsUTC = new Date(localDate.getTime() - offsetMs);
 
       const dataToSend = {
         referralId: formData.patientId,
