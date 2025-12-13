@@ -18,7 +18,9 @@ const GenericSelector = ({
   searchPlaceholder = "Buscar...",
   required = false,
   filterData = null,
+  filterParams = null, // Parámetros adicionales que afectan el filtro
 }) => {
+  const [rawItems, setRawItems] = useState([]); // Datos sin filtro de filterData
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,6 +41,12 @@ const GenericSelector = ({
       loadItems();
     }
   }, [methodParams, method]);
+
+  // Aplicar filterData cuando cambia o cuando cambian los rawItems
+  useEffect(() => {
+    const finalData = filterData ? filterData(rawItems) : rawItems;
+    setItems(finalData || []);
+  }, [rawItems, filterData, filterParams]); // Añadido filterParams como dependencia
 
   // Click outside (mejorado para no cerrar en scrollbar)
   useEffect(() => {
@@ -117,13 +125,10 @@ const GenericSelector = ({
           break;
       }
 
-      const finalData = filterData ? filterData(data) : data;
-      setItems(finalData || []);
-      setFilteredItems(finalData || []);
+      setRawItems(data || []);
     } catch (error) {
       console.error("Error al cargar datos:", error);
-      setItems([]);
-      setFilteredItems([]);
+      setRawItems([]);
     } finally {
       setLoading(false);
     }

@@ -4,7 +4,7 @@ import { consultationDerivationService } from "../services/consultationDerivatio
 import Selector from "./Selector";
 import CustomDatePicker from "./CustmonDatePicker";
 import { departmentService } from "../services/departmentService";
-import { derivationService, referralService } from "../services/derivationService";
+import { derivationService } from "../services/derivationService";
 import { employeeService } from "../services/employeeService.js";
 import { departmentHeadService } from "../services/departmentHeadService";
 import { userService } from "../services/userService";
@@ -281,6 +281,12 @@ const ModalConsultationDerivation = ({
               label="Paciente"
               placeholder="Selecciona un paciente"
               required={true}
+              filterParams={formData.departmentId}
+              filterData={(data) => {
+                // Filtrar solo pacientes derivados al departamento actual
+                if (!formData.departmentId) return data;
+                return data.filter(item => item.departmentToId === formData.departmentId);
+              }}
               getItemId={(item) => item?.derivationId || item?.id}
               getDisplayText={(item) => item?.patientName || item?.name || ''}
               getSearchableText={(item) => {

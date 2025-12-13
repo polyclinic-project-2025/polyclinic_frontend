@@ -290,6 +290,12 @@ const ModalConsultation = ({
               label="Paciente"
               placeholder="Selecciona un paciente"
               required={true}
+              filterParams={formData.departmentId}
+              filterData={(data) => {
+                // Filtrar solo pacientes remitidos al departamento actual
+                if (!formData.departmentId) return data;
+                return data.filter(item => item.departmentToId === formData.departmentId);
+              }}
               getItemId={(item) => item?.referralId || item?.id}
               getDisplayText={(item) => item?.patientName || item?.name || ''}
               getSearchableText={(item) => {
