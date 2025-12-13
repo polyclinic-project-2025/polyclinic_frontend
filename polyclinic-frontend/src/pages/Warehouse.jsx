@@ -450,6 +450,8 @@ const Warehouse = () => {
               medicationId,
               departmentId,
               quantity,
+              minQuantity: 50,
+              maxQuantity: 500,
             });
           }
         }
