@@ -7,7 +7,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { usePermissions, filterModulesByPermission } from "../middleware/PermissionMiddleware";
+import { warehouseManagerService } from "../services/warehouseManagerService";
+import { userService } from "../services/userService";
 import Departments from "./Departments";
+import Warehouse from "./Warehouse";
 import UsersView from "./UsersView";
 import ModalSettings from "../components/ModalSettings";
 import ConsultationsReferral from "./ConsultationsReferral";
@@ -30,6 +33,9 @@ const Dashboard = () => {
   const [showModalSettings, setShowModalSettings] = useState(false);
   const [selectedMode, setSelectedMode] = useState(null);
   const [activeItem, setActiveItem] = useState(null);
+  const [currentWarehouseManager, setCurrentWarehouseManager] = useState(null);
+  const [isCurrentWarehouseManager, setIsCurrentWarehouseManager] = useState(false);
+  const [loadingWarehouseManager, setLoadingWarehouseManager] = useState(true);
 
   // Detectar navegación desde ModalSettings
   useEffect(() => {
@@ -53,6 +59,39 @@ const Dashboard = () => {
     }
   }, [location.pathname, location.search]);
 
+  // Verificar si el usuario es el jefe de almacén actual
+  useEffect(() => {
+    const verifyCurrentWarehouseManager = async () => {
+      try {
+        setLoadingWarehouseManager(true);
+        
+        // Obtener el jefe de almacén actual
+        const manager = await warehouseManagerService.getCurrent();
+        setCurrentWarehouseManager(manager);
+
+        // Si el usuario tiene rol de Jefe de Almacén, verificar si es el actual
+        if (user?.roles?.includes('Jefe de Almacén')) {
+          const profile = await userService.getProfile(user.id);
+          const userEmployeeId = profile.profile?.employeeId;
+          
+          // Comparar si el employeeId del usuario coincide con el del jefe actual
+          setIsCurrentWarehouseManager(userEmployeeId === manager?.employeeId);
+        } else {
+          setIsCurrentWarehouseManager(false);
+        }
+      } catch (err) {
+        console.warn('Error verificando jefe de almacén actual:', err);
+        setCurrentWarehouseManager(null);
+        setIsCurrentWarehouseManager(false);
+      } finally {
+        setLoadingWarehouseManager(false);
+      }
+    };
+
+    if (user?.id) {
+      verifyCurrentWarehouseManager();
+    }
+  }, [user?.id, user?.roles]);
 
   const handleLogout = () => {
     logout();
@@ -187,7 +226,14 @@ const Dashboard = () => {
     };
   }, [activeItem]);
 
-  const modules = filterModulesByPermission(allModules, user?.roles || []);
+  // Filtrar módulos: excluir almacén para jefes de almacén que no sean actuales
+  const modules = filterModulesByPermission(allModules, user?.roles || []).filter(module => {
+    // Si es el módulo de almacén y el usuario es jefe de almacén pero NO es el actual, lo excluimos
+    if (module.id === 'warehouse' && user?.roles?.includes('Jefe de Almacén') && !isCurrentWarehouseManager) {
+      return false;
+    }
+    return true;
+  });
 
   const renderContent = () => {
     if (!canAccess(activeModule)) {
@@ -248,6 +294,8 @@ const Dashboard = () => {
         return <UsersView />;
       case "departments":
         return <Departments />;
+      case "warehouse":
+        return <Warehouse />;
       case "patients":
         return <Patients />;
       case "consultations":
@@ -278,12 +326,7 @@ const Dashboard = () => {
       case "medications":
         return <Medications />;
       case "warehouse":
-        return (
-          <div className="text-center py-12">
-            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Almacén Central en desarrollo</p>
-          </div>
-        );
+        return <Warehouse />;
       case "reports":
         return (
           <Reportes />
@@ -356,7 +399,7 @@ const Dashboard = () => {
             const isSubmenuOpen = activeItem === module.id;
 
             return (
-              <div key={module.id} className="relative">
+              <div key={module.id} className="relative group">
                 <button
                   onClick={() => handleItemClick(module.id)}
                   className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${

@@ -37,6 +37,8 @@ const PERMISSIONS = {
     canExportUsers: true,
     canExportConsultations: true,
     canExportMedications: true,
+    canCreateWarehouseRequests: false,
+    canApproveWarehouseRequests: false,
   },
   
   Doctor: {
@@ -71,6 +73,8 @@ const PERMISSIONS = {
     canExportUsers: false,
     canExportConsultations: true,
     canExportMedications: false,
+    canCreateWarehouseRequests: true,
+    canApproveWarehouseRequests: false,
   },
   
   "Enfermero/a": {
@@ -105,6 +109,8 @@ const PERMISSIONS = {
     canExportUsers: false,
     canExportConsultations: false,
     canExportMedications: false,
+    canCreateWarehouseRequests: false,
+    canApproveWarehouseRequests: false,
   },
   
   "Jefe de Almacén": {
@@ -139,6 +145,8 @@ const PERMISSIONS = {
     canExportUsers: false,
     canExportConsultations: false,
     canExportMedications: true,
+    canCreateWarehouseRequests: false,
+    canApproveWarehouseRequests: true,
   },
   
   Paciente: {
@@ -173,6 +181,8 @@ const PERMISSIONS = {
     canExportUsers: false,
     canExportConsultations: false,
     canExportMedications: false,
+    canCreateWarehouseRequests: false,
+    canApproveWarehouseRequests: false,
   },
 
   "Jefe de Departamento": {
@@ -203,12 +213,14 @@ const PERMISSIONS = {
     canExportUsers: false,
     canExportConsultations: true,
     canExportMedications: false,
+    canCreateWarehouseRequests: true,
+    canApproveWarehouseRequests: true,
   },
 };
 
 const MODULE_ACCESS = {
   Admin: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'staff', 'medications', 'warehouse', 'reports'],
-  Doctor: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications', 'reports'],
+  Doctor: ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications', 'reports', 'warehouse'],
   "Enfermero/a": ['dashboard', 'patients', 'consultations', 'emergency', 'departments', 'medications', 'reports'],
   "Jefe de Almacén": ['dashboard', 'medications', 'warehouse', 'reports'],
   Paciente: ['dashboard', 'consultations', 'departments', 'reports'],
