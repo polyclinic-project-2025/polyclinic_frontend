@@ -488,8 +488,8 @@ const Warehouse = () => {
   // Obtener badge de estado
   const getStatusBadge = (status) => {
     const badges = {
-      "1": { label: 'Pendiente Jefe Depto', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      "2": { label: 'Pendiente Almacén', color: 'bg-blue-100 text-blue-800', icon: Clock },
+      "1": { label: 'Pendiente del Jefe de Departamento', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+      "2": { label: 'Pendiente del Jefe de Almacén', color: 'bg-blue-100 text-blue-800', icon: Clock },
       "0": { label: 'Aprobada', color: 'bg-green-100 text-green-800', icon: CheckCircle },
       "-1": { label: 'Rechazada por Jefe de Departamento', color: 'bg-red-100 text-red-800', icon: XCircle },
       "-2": { label: 'Rechazada por Jefe de Almacén', color: 'bg-red-100 text-red-800', icon: XCircle }
