@@ -155,7 +155,7 @@ const ModalConsultationDerivation = ({
         setSubmitting(true);
         setError("");
 
-        try {
+      try {
         
         if (!formData.patient?.derivationId && !formData.patientId) {
             throw new Error("Debe seleccionar un paciente");

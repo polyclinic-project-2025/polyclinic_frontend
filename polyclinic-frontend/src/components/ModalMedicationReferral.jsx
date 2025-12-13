@@ -240,7 +240,6 @@ const ModalMedicationReferral = ({
 
     console.log('📊 Operaciones a realizar:', { toUpdate, toDelete, toCreate });
 
-    // EJECUTAR ELIMINACIONES
     for (const med of toDelete) {
       try {
         console.log(`🗑️ Eliminando: ${med.medicationReferralId}`);
@@ -250,7 +249,6 @@ const ModalMedicationReferral = ({
       }
     }
 
-    // EJECUTAR ACTUALIZACIONES
     for (const med of toUpdate) {
       try {
         console.log(`🔄 Actualizando: ${med.medicationReferralId} → Cantidad: ${med.quantity}`);
