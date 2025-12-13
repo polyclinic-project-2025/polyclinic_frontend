@@ -5,8 +5,8 @@ const analyticsService = {
   // Obtener las últimas 10 consultas unificadas
   getLast10: async (patientId) => {
     try {
-      const response = await api.get(`/Analytics/last10/${patientId}`);
-      return response.data;
+      const data = await api.get(`/Analytics/last10/${patientId}`);
+      return data;
     } catch (error) {
       console.error('Error fetching last 10 analytics consultations:', error);
       throw error;
@@ -16,7 +16,7 @@ const analyticsService = {
   // Obtener consultas unificadas por rango de fechas
   getByDateRange: async (params) => {
     try {
-      const response = await api.get('/Analytics/range', {
+      const data = await api.get('/Analytics/range', {
         params: {
           patientId: params.patientId,
           startDate: params.startDate,
@@ -24,7 +24,7 @@ const analyticsService = {
         },
       });
 
-      return response.data;
+      return data;
     } catch (error) {
       console.error('Error fetching analytics consultations by range:', error);
       throw error;

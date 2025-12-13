@@ -4,8 +4,8 @@ const medicationReferralService = {
   // Get all medication referrals
   getAll: async () => {
     try {
-      const response = await api.get('/MedicationReferral');
-      return response.data;
+      const data = await api.get('/MedicationReferral');
+      return data;
     } catch (error) {
       console.error('Error fetching medication referrals:', error);
       throw error;
@@ -15,8 +15,8 @@ const medicationReferralService = {
   // Get medication referral by ID
   getById: async (id) => {
     try {
-      const response = await api.get(`/MedicationReferral/${id}`);
-      return response.data;
+      const data = await api.get(`/MedicationReferral/${id}`);
+      return data;
     } catch (error) {
       console.error('Error fetching medication referral:', error);
       throw error;
@@ -26,12 +26,12 @@ const medicationReferralService = {
   // Create new medication referral
   create: async (medicationReferralData) => {
     try {
-      const response = await api.post('/MedicationReferral', {
+      const data = await api.post('/MedicationReferral', {
         quantity: medicationReferralData.quantity,
         consultationReferralId: medicationReferralData.consultationReferralId,
         medicationId: medicationReferralData.medicationId
       });
-      return response.data;
+      return data;
     } catch (error) {
       console.error('Error creating medication referral:', error);
       throw error;
@@ -41,12 +41,12 @@ const medicationReferralService = {
   // Update medication referral
   update: async (id, medicationReferralData) => {
     try {
-      const response = await api.put(`/MedicationReferral/${id}`, {
+      const data = await api.put(`/MedicationReferral/${id}`, {
         quantity: medicationReferralData.quantity,
         consultationReferralId: medicationReferralData.consultationReferralId,
         medicationId: medicationReferralData.medicationId
       });
-      return response.data;
+      return data;
     } catch (error) {
       console.error('Error updating medication referral:', error);
       throw error;
@@ -56,8 +56,8 @@ const medicationReferralService = {
   // Delete medication referral
   delete: async (id) => {
     try {
-      const response = await api.delete(`/MedicationReferral/${id}`);
-      return response.data;
+      const data = await api.delete(`/MedicationReferral/${id}`);
+      return data;
     } catch (error) {
       console.error('Error deleting medication referral:', error);
       throw error;
@@ -67,8 +67,8 @@ const medicationReferralService = {
   // Get medications by consultation ID
   getByConsultationId: async (consultationId) => {
     try {
-      const response = await api.get('/MedicationReferral');
-      const allMedications = response.data;
+      const data = await api.get('/MedicationReferral');
+      const allMedications = data;
       // Filtrar por consultationReferralId
       return allMedications.filter(med => 
         med.consultationReferralId === consultationId

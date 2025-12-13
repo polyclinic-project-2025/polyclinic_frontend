@@ -4,8 +4,8 @@ const medicationService = {
   // Get all medications
   getAll: async () => {
     try {
-      const response = await api.get('/Medication/all');
-      return response.data;
+      const data = await api.get('/Medication/all');
+      return data;
     } catch (error) {
       console.error('Error fetching medications:', error);
       throw error;
@@ -15,8 +15,8 @@ const medicationService = {
   // Get medication by ID
   getById: async (id) => {
     try {
-      const response = await api.get(`/Medication/${id}`);
-      return response.data;
+      const data = await api.get(`/Medication/${id}`);
+      return data;
     } catch (error) {
       console.error('Error fetching medication:', error);
       throw error;
@@ -26,7 +26,7 @@ const medicationService = {
   // Create new medication
   create: async (medicationData) => {
     try {
-      const response = await api.post('/Medication', {
+      const data = await api.post('/Medication', {
         format: medicationData.format,
         commercialName: medicationData.commercialName,
         commercialCompany: medicationData.commercialCompany,
@@ -40,7 +40,7 @@ const medicationService = {
         maxQuantityWarehouse: medicationData.maxQuantityWarehouse,
         maxQuantityNurse: medicationData.maxQuantityNurse
       });
-      return response.data;
+      return data;
     } catch (error) {
       console.error('Error creating medication:', error);
       throw error;
@@ -50,7 +50,7 @@ const medicationService = {
   // Update medication
   update: async (id, medicationData) => {
     try {
-      const response = await api.put(`/Medication/${id}`, {
+      const data = await api.put(`/Medication/${id}`, {
         format: medicationData.format,
         commercialName: medicationData.commercialName,
         commercialCompany: medicationData.commercialCompany,
@@ -75,8 +75,8 @@ const medicationService = {
   // Delete medication
   delete: async (id) => {
     try {
-      const response = await api.delete(`/Medication/${id}`);
-      return response.data;
+      const data = await api.delete(`/Medication/${id}`);
+      return data;
     } catch (error) {
       console.error('Error deleting medication:', error);
       throw error;
@@ -89,8 +89,7 @@ const medicationService = {
    */
   exportToPdf: async () => {
     try {
-      const response = await api.get('/Medication/export');
-      const result = response.data;
+      const result = await api.get('/Medication/export');
 
       // Decodificar Base64 y descargar
       const byteCharacters = atob(result.data);

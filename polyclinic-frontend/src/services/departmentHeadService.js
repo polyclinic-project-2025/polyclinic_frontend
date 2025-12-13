@@ -8,11 +8,10 @@ export const departmentHeadService = {
    */
   getAll: async () => {
     try {
-      const response = await api.get('/DepartmentHead');
-      return response.data;
+      const data = await api.get('/DepartmentHead');
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener jefes de departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener jefes de departamento');
     }
   },
 
@@ -23,12 +22,11 @@ export const departmentHeadService = {
    */
   getById: async (id) => {
     try {
-      const response = await api.get(`/DepartmentHead/${id}`);
-      return response.data;
+      const data = await api.get(`/DepartmentHead/${id}`);
+      return data;
     } catch (error) {
       console.error('Error al obtener jefe de departamento:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener jefe de departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener jefe de departamento');
     }
   },
 
@@ -39,12 +37,11 @@ export const departmentHeadService = {
    */
   getByDepartmentId: async (departmentId) => {
     try {
-      const response = await api.get(`/DepartmentHead/by-department-id/${departmentId}`);
-      return response.data;
+      const data = await api.get(`/DepartmentHead/by-department-id/${departmentId}`);
+      return data;
     } catch (error) {
       console.error('Error al obtener jefe de departamento:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener jefe de departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener jefe de departamento');
     }
   },
 
@@ -56,16 +53,15 @@ export const departmentHeadService = {
    */
   assign: async (departmentId, doctorId) => {
     try {
-      const response = await api.post('/DepartmentHead', {
+      const data = await api.post('/DepartmentHead', {
         doctorId: doctorId
       }, {
         params: { departmentId } // Envía departmentId como query param
       });
-      return response.data;
+      return data;
     } catch (error) {
       console.error('Error al asignar jefe de departamento:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al asignar jefe de departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al asignar jefe de departamento');
     }
   },
 
@@ -78,8 +74,7 @@ export const departmentHeadService = {
     try {
       await api.delete(`/DepartmentHead/${id}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al remover jefe de departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al remover jefe de departamento');
     }
   },
 };
