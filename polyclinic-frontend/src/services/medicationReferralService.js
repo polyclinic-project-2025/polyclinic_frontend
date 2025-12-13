@@ -34,7 +34,24 @@ const medicationReferralService = {
       return response.data;
     } catch (error) {
       console.error('Error creating medication referral:', error);
-      throw error;
+      // ✨ CAPTURAR ERROR 422 (Stock insuficiente)
+      if (error.response?.status === 422) {
+        const errorMessage = error.response.data?.error || 'Stock insuficiente';
+        throw new Error(errorMessage);
+      }
+      
+      // ✨ CAPTURAR ERROR 400 (Validación)
+      if (error.response?.status === 400) {
+        const errorMessage = error.response.data?.error || 'Stock insuficiente';
+        throw new Error(errorMessage);
+      }
+      
+      // ✨ OTROS ERRORES
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      
+      throw new Error(error.message || 'Error al crear derivación de medicamento');
     }
   },
 
@@ -48,8 +65,24 @@ const medicationReferralService = {
       });
       return response.data;
     } catch (error) {
-      console.error('Error updating medication referral:', error);
-      throw error;
+      // ✨ CAPTURAR ERROR 422 (Stock insuficiente)
+      if (error.response?.status === 422) {
+        const errorMessage = error.response.data?.error || 'Stock insuficiente';
+        throw new Error(errorMessage);
+      }
+      
+      // ✨ CAPTURAR ERROR 400 (Validación)
+      if (error.response?.status === 400) {
+        const errorMessage = error.response.data?.error || 'Stock insuficiente';
+        throw new Error(errorMessage);
+      }
+      
+      // ✨ OTROS ERRORES
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      
+      throw new Error(error.message || 'Error al crear derivación de medicamento');
     }
   },
 

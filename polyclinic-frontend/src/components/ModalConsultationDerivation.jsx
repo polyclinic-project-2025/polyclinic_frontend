@@ -274,7 +274,8 @@ const ModalConsultationDerivation = ({
                 const updatedData = { 
                   ...formData, 
                   patient: patient,
-                  patientId: patient?.derivationId
+                  patientId: patient?.derivationId,
+                  patientDepartment : patient?.departmentToId
                 };
                 setFormData(updatedData);
               }}
@@ -303,6 +304,11 @@ const ModalConsultationDerivation = ({
                   )}
                 </div>
               )}
+              filterItems={(items) => {
+                // Filtrar solo pacientes cuyo departmentTo coincida con el departamento seleccionado
+                if (!formData.departmentId) return items;
+                return items.filter(item => item.departmentToId === formData.departmentId);
+              }}
             />
           </div>
 
@@ -400,4 +406,4 @@ const ModalConsultationDerivation = ({
   );
 };
 
-export default ModalConsultationDerivation;  
+export default ModalConsultationDerivation;

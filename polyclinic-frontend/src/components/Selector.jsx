@@ -18,6 +18,7 @@ const GenericSelector = ({
   searchPlaceholder = "Buscar...",
   required = false,
   filterData = null,
+  filterItems = null, // Nueva prop para filtrar items después de cargar
 }) => {
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
@@ -90,16 +91,24 @@ const GenericSelector = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
+  // Aplicar filtros de búsqueda y filterItems
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredItems(items || []);
-    } else {
-      const filtered = (items || []).filter((item) =>
+    let result = items || [];
+    
+    // Primero aplicar filterItems si existe
+    if (filterItems) {
+      result = filterItems(result);
+    }
+    
+    // Luego aplicar el filtro de búsqueda
+    if (searchTerm.trim() !== "") {
+      result = result.filter((item) =>
         getSearchableText(item).toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredItems(filtered);
     }
-  }, [searchTerm, items]);
+    
+    setFilteredItems(result);
+  }, [searchTerm, items, filterItems]);
 
   const loadItems = async () => {
     try {
@@ -119,7 +128,6 @@ const GenericSelector = ({
 
       const finalData = filterData ? filterData(data) : data;
       setItems(finalData || []);
-      setFilteredItems(finalData || []);
     } catch (error) {
       console.error("Error al cargar datos:", error);
       setItems([]);
@@ -232,7 +240,7 @@ const GenericSelector = ({
                 <div className="p-4 text-center text-gray-500">Cargando...</div>
               ) : (filteredItems || []).length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
-                  {searchTerm
+                  {searchTerm || filterItems
                     ? "No se encontraron resultados"
                     : "No hay datos disponibles"}
                 </div>
