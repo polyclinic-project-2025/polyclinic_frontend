@@ -24,60 +24,33 @@ const medicationDerivationService = {
     }
   },
 
+  // Create medication derivation
   create: async (data) => {
     try {
-      const response = await api.post('/MedicationDerivation', data);
+      const response = await api.post('/MedicationDerivation', {
+        quantity: data.quantity,
+        consultationDerivationId: data.consultationDerivationId,
+        medicationId: data.medicationId
+      });
       return response.data;
     } catch (error) {
       console.error('Error creating medication derivation:', error);
-      
-      // ✨ CAPTURAR ERROR 422 (Stock insuficiente)
-      if (error.response?.status === 422) {
-        const errorMessage = error.response.data?.error || 'Stock insuficiente';
-        throw new Error(errorMessage);
-      }
-      
-      // ✨ CAPTURAR ERROR 400 (Validación)
-      if (error.response?.status === 400) {
-        const errorMessage = error.response.data?.error || 'Stock insuficiente';
-        throw new Error(errorMessage);
-      }
-      
-      // ✨ OTROS ERRORES
-      if (error.response?.data?.error) {
-        throw new Error(error.response.data.error);
-      }
-      
-      throw new Error(error.message || 'Error al crear derivación de medicamento');
+      throw error;
     }
   },
 
-  // UPDATE
+  // Update medication derivation
   update: async (id, data) => {
     try {
-      const response = await api.put(`/MedicationDerivation/${id}`, data);
+      const response = await api.put(`/MedicationDerivation/${id}`, {
+        quantity: data.quantity,
+        consultationDerivationId: data.consultationDerivationId,
+        medicationId: data.medicationId
+      });
       return response.data;
     } catch (error) {
       console.error('Error updating medication derivation:', error);
-      
-      // ✨ CAPTURAR ERROR 422 (Stock insuficiente)
-      if (error.response?.status === 422) {
-        const errorMessage = error.response.data?.error || 'Stock insuficiente';
-        throw new Error(errorMessage);
-      }
-      
-      // ✨ CAPTURAR ERROR 400 (Validación)
-      if (error.response?.status === 400) {
-        const errorMessage = error.response.data?.error || 'Stock insuficiente';
-        throw new Error(errorMessage);
-      }
-      
-      // ✨ OTROS ERRORES
-      if (error.response?.data?.error) {
-        throw new Error(error.response.data.error);
-      }
-      
-      throw new Error(error.message || 'Error al crear derivación de medicamento');
+      throw error;
     }
   },
 

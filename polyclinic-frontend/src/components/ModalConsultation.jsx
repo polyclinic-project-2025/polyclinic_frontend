@@ -312,11 +312,6 @@ const ModalConsultation = ({
                   )}
                 </div>
               )}
-              filterItems={(items) => {
-                // Filtrar solo pacientes cuyo departmentTo coincida con el departamento seleccionado
-                if (!formData.departmentId) return items;
-                return items.filter(item => item.departmentToId === formData.departmentId);
-              }}
             />
           </div>
 
