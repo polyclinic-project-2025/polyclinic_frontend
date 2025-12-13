@@ -60,8 +60,9 @@ const stockDepartmentService = {
   // GET STOCK BY DEPARTMENT - Obtener stock por departamento
   getStockByDepartment: async (departmentId) => {
     try {
-      const data = await api.get(`/StockDepartment/department/${departmentId}/stock`);
-      return data;
+      console.log('AAAAAAAAA',departmentId);
+      const response = await api.get(`/StockDepartment/department/${departmentId}/stock`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching stock by department:', error);
       throw error;

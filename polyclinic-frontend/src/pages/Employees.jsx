@@ -410,7 +410,7 @@ const Employees = ({ type }) => {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                    placeholder="Yosvanis Arismin Sierra Hernández"
+                    placeholder="Ej: Yosvanis Arismin Sierra Hernández"
                   />
                 </div>
 
@@ -424,7 +424,7 @@ const Employees = ({ type }) => {
                     value={formData.identification}
                     onChange={(e) => setFormData({ ...formData, identification: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                    placeholder="91021772067"
+                    placeholder="Ej: 91021772067"
                   />
                 </div>
               </div>

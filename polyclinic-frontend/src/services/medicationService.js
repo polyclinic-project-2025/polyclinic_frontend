@@ -64,7 +64,8 @@ const medicationService = {
         maxQuantityWarehouse: medicationData.maxQuantityWarehouse,
         maxQuantityNurse: medicationData.maxQuantityNurse
       });
-      return data;
+      console.log('medicationData.quantityWarehouse',medicationData.quantityWarehouse);
+      return response.data;
     } catch (error) {
       console.error('Error updating medication:', error);
       throw error;
