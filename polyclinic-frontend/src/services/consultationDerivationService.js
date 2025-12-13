@@ -8,11 +8,10 @@ export const consultationDerivationService = {
    */
   getAll: async () => {
     try {
-      const response = await api.get('/ConsultationDerivation');
-      return response.data;
+      const data = await api.get('/ConsultationDerivation');
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener derivaciones';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener derivaciones');
     }
   },
 
@@ -23,12 +22,11 @@ export const consultationDerivationService = {
    */
   getById: async (id) => {
     try {
-      const response = await api.get(`/ConsultationDerivation/${id}`);
-      return response.data;
+      const data = await api.get(`/ConsultationDerivation/${id}`);
+      return data;
     } catch (error) {
       console.error('Error al obtener derivación:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener derivación';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener derivación');
     }
   },
 
@@ -39,13 +37,11 @@ export const consultationDerivationService = {
    */
   create: async (data) => {
     try {
-      const response = await api.post('/ConsultationDerivation', data);
-      return response.data;
+      const result = await api.post('/ConsultationDerivation', data);
+      return result;
     } catch (error) {
       console.error('Error al crear derivación:', error);
-      console.error(error.response);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al crear derivación';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al crear derivación');
     }
   },
 
@@ -60,8 +56,7 @@ export const consultationDerivationService = {
       await api.put(`/ConsultationDerivation/${id}`, data);
     } catch (error) {
       console.error('Error al actualizar derivación:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al actualizar derivación';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al actualizar derivación');
     }
   },
 
@@ -74,8 +69,7 @@ export const consultationDerivationService = {
     try {
       await api.delete(`/ConsultationDerivation/${id}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al eliminar derivación';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al eliminar derivación');
     }
   },
 
@@ -88,17 +82,16 @@ export const consultationDerivationService = {
    */
   inRange: async (patientId, startDate, endDate) => {
     try {
-      const response = await api.get('/ConsultationDerivation/date-range', {
+      const data = await api.get('/ConsultationDerivation/date-range', {
         params: {
           patientId,
           startDate,
           endDate
         }
       });
-      return response.data;
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener derivaciones por rango de fechas';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener derivaciones por rango de fechas');
     }
   },
 
@@ -109,11 +102,10 @@ export const consultationDerivationService = {
    */
   getLastTen: async (patientId) => {
     try {
-      const response = await api.get(`/ConsultationDerivation/last-10/${patientId}`);
-      return response.data;
+      const data = await api.get(`/ConsultationDerivation/last-10/${patientId}`);
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener últimas derivaciones';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener últimas derivaciones');
     }
   },
 };

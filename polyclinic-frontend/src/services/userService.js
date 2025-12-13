@@ -8,17 +8,10 @@ export const userService = {
    */
   getAll: async () => {
     try {
-      const response = await api.get('/User');
-      
-      // El backend devuelve { isSuccess, value, errorMessage }
-      if (response.data.isSuccess) {
-        return response.data.value || [];
-      } else {
-        throw new Error(response.data.errorMessage || 'Error al obtener usuarios');
-      }
+      const data = await api.get('/User');
+      return data || [];
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || error.message || 'Error al obtener usuarios';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener usuarios');
     }
   },
 
@@ -44,16 +37,10 @@ export const userService = {
         patchData.value = value;
       }
 
-      const response = await api.patch(`/User/${id}`, patchData);
-      
-      if (response.data.isSuccess) {
-        return response.data.value;
-      } else {
-        throw new Error(response.data.errorMessage || 'Error al actualizar usuario');
-      }
+      const data = await api.patch(`/User/${id}`, patchData);
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || error.message || 'Error al actualizar usuario';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al actualizar usuario');
     }
   },
 
@@ -107,15 +94,10 @@ export const userService = {
    */
   delete: async (id) => {
     try {
-      const response = await api.delete(`/User/${id}`);      
-      if (response.data.isSuccess) {
-        return response.data.value;
-      } else {
-        throw new Error(response.data.errorMessage || 'Error al eliminar usuario');
-      }
+      const data = await api.delete(`/User/${id}`);
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || error.message || 'Error al eliminar usuario';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al eliminar usuario');
     }
   },
 
@@ -126,16 +108,10 @@ export const userService = {
    */
   getProfileType: async (id) => {
     try {
-      const response = await api.get(`/User/${id}/profile/type`);
-      
-      if (response.data.profileType) {
-        return response.data.profileType;
-      } else {
-        throw new Error('Error al obtener el tipo de perfil');
-      }
+      const data = await api.get(`/User/${id}/profile/type`);
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data || error.message || 'Error al obtener el tipo de perfil';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener el tipo de perfil');
     }
   },
 
@@ -146,18 +122,11 @@ export const userService = {
    */
   getProfile: async (id) => {
     try {
-      const response = await api.get(`/User/${id}/profile`);
-      console.log(response.data, " data is success ", response.data.isSuccess);
-      
-      if (response.data) {
-        return response.data;
-      } 
-      else {
-        throw new Error(response.data.errorMessage || 'Error al obtener el perfil');
-      }
+      const data = await api.get(`/User/${id}/profile`);
+      console.log(data, " data from profile ");
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || error.message || 'Error al obtener el perfil';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener el perfil');
     }
   },
 
@@ -167,8 +136,7 @@ export const userService = {
    */
   exportToPdf: async () => {
     try {
-      const response = await api.get('/User/export');
-      const result = response.data;
+      const result = await api.get('/User/export');
 
       // Decodificar Base64 y descargar
       const byteCharacters = atob(result.data);
@@ -183,8 +151,7 @@ export const userService = {
       const url = URL.createObjectURL(blob);
       return url;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || error.message || 'Error al exportar usuarios';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al exportar usuarios');
     }
   },
 };

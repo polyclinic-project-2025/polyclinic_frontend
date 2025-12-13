@@ -5,8 +5,8 @@ const medicationDerivationService = {
   // Get all medication derivations
   getAll: async () => {
     try {
-      const response = await api.get('/MedicationDerivation');
-      return response.data;
+      const data = await api.get('/MedicationDerivation');
+      return data;
     } catch (error) {
       console.error('Error fetching medication derivations:', error);
       throw error;
@@ -16,8 +16,8 @@ const medicationDerivationService = {
   // Get medication derivation by ID
   getById: async (id) => {
     try {
-      const response = await api.get(`/MedicationDerivation/${id}`);
-      return response.data;
+      const data = await api.get(`/MedicationDerivation/${id}`);
+      return data;
     } catch (error) {
       console.error('Error fetching medication derivation:', error);
       throw error;
@@ -27,12 +27,12 @@ const medicationDerivationService = {
   // Create medication derivation
   create: async (data) => {
     try {
-      const response = await api.post('/MedicationDerivation', {
+      const result = await api.post('/MedicationDerivation', {
         quantity: data.quantity,
         consultationDerivationId: data.consultationDerivationId,
         medicationId: data.medicationId
       });
-      return response.data;
+      return result;
     } catch (error) {
       console.error('Error creating medication derivation:', error);
       throw error;
@@ -42,12 +42,12 @@ const medicationDerivationService = {
   // Update medication derivation
   update: async (id, data) => {
     try {
-      const response = await api.put(`/MedicationDerivation/${id}`, {
+      const result = await api.put(`/MedicationDerivation/${id}`, {
         quantity: data.quantity,
         consultationDerivationId: data.consultationDerivationId,
         medicationId: data.medicationId
       });
-      return response.data;
+      return result;
     } catch (error) {
       console.error('Error updating medication derivation:', error);
       throw error;
@@ -57,8 +57,8 @@ const medicationDerivationService = {
   // Delete medication derivation
   delete: async (id) => {
     try {
-      const response = await api.delete(`/MedicationDerivation/${id}`);
-      return response.data;
+      const data = await api.delete(`/MedicationDerivation/${id}`);
+      return data;
     } catch (error) {
       console.error('Error deleting medication derivation:', error);
       throw error;
@@ -68,8 +68,8 @@ const medicationDerivationService = {
   // Get derivations by consultation ID
   getByConsultationId: async (consultationId) => {
     try {
-      const response = await api.get('/MedicationDerivation');
-      const all = response.data;
+      const data = await api.get('/MedicationDerivation');
+      const all = data;
 
       return all.filter(item =>
         item.consultationDerivationId === consultationId

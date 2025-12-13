@@ -23,12 +23,10 @@ export const employeeService = {
   getAllByType: async (type) => {
     try {
       const endpoint = getEndpoint(type);
-      const response = await api.get(endpoint);
-      return response.data;
+      const data = await api.get(endpoint);
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 
-        `Error al obtener ${type === 'doctor' ? 'doctores' : 'enfermeros'}`;
-      throw new Error(errorMessage);
+      throw new Error(error.message || `Error al obtener ${type === 'doctor' ? 'doctores' : 'enfermeros'}`);
     }
   },
 
@@ -41,12 +39,11 @@ export const employeeService = {
   getById: async (type, id) => {
     try {
       const endpoint = getEndpoint(type);
-      const response = await api.get(`${endpoint}/${id}`);
-      return response.data;
+      const data = await api.get(`${endpoint}/${id}`);
+      return data;
     } catch (error) {
       console.error('Error al obtener empleado:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener empleado';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener empleado');
     }
   },
 
@@ -59,13 +56,11 @@ export const employeeService = {
   create: async (type, employeeData) => {
     try {
       const endpoint = getEndpoint(type);
-      const response = await api.post(endpoint, employeeData);
-      return response.data;
+      const data = await api.post(endpoint, employeeData);
+      return data;
     } catch (error) {
       console.error('Error al crear empleado:', error);
-      const errorMessage = error.response?.data?.errorMessage || 
-        `Error al crear ${type === 'doctor' ? 'doctor' : 'enfermero'}`;
-      throw new Error(errorMessage);
+      throw new Error(error.message || `Error al crear ${type === 'doctor' ? 'doctor' : 'enfermero'}`);
     }
   },
 
@@ -82,9 +77,7 @@ export const employeeService = {
       await api.put(`${endpoint}/${id}`, employeeData);
     } catch (error) {
       console.error('Error al actualizar empleado:', error);
-      const errorMessage = error.response?.data?.errorMessage || 
-        `Error al actualizar ${type === 'doctor' ? 'doctor' : 'enfermero'}`;
-      throw new Error(errorMessage);
+      throw new Error(error.message || `Error al actualizar ${type === 'doctor' ? 'doctor' : 'enfermero'}`);
     }
   },
 
@@ -99,9 +92,7 @@ export const employeeService = {
       const endpoint = getEndpoint(type);
       await api.delete(`${endpoint}/${id}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 
-        `Error al eliminar ${type === 'doctor' ? 'doctor' : 'enfermero'}`;
-      throw new Error(errorMessage);
+      throw new Error(error.message || `Error al eliminar ${type === 'doctor' ? 'doctor' : 'enfermero'}`);
     }
   },
 };
