@@ -182,7 +182,7 @@ const ModalConsultation = ({
       const dataToSend = {
         referralId: formData.patientId,
         doctorId: formData.doctorId,
-        dateTimeCRem: localAsUTC.toISOString(),
+        dateTimeCRem: new Date(formData.dateTime).toISOString(),
         departmentHeadId: departmentHeadId,
         diagnosis: formData.diagnostic.trim(),
       };

@@ -39,6 +39,7 @@ const PERMISSIONS = {
     canExportMedications: true,
     canCreateWarehouseRequests: false,
     canApproveWarehouseRequests: false,
+    canViewDepartmentStock: true,
   },
   
   Doctor: {
@@ -75,6 +76,7 @@ const PERMISSIONS = {
     canExportMedications: false,
     canCreateWarehouseRequests: true,
     canApproveWarehouseRequests: false,
+    canViewDepartmentStock: true,
   },
   
   "Enfermero/a": {
@@ -111,6 +113,7 @@ const PERMISSIONS = {
     canExportMedications: false,
     canCreateWarehouseRequests: false,
     canApproveWarehouseRequests: false,
+    canViewDepartmentStock: true,
   },
   
   "Jefe de Almacén": {
@@ -147,6 +150,7 @@ const PERMISSIONS = {
     canExportMedications: true,
     canCreateWarehouseRequests: false,
     canApproveWarehouseRequests: true,
+    canViewDepartmentStock: true,
   },
   
   Paciente: {
@@ -183,6 +187,7 @@ const PERMISSIONS = {
     canExportMedications: false,
     canCreateWarehouseRequests: false,
     canApproveWarehouseRequests: false,
+    canViewDepartmentStock: false,
   },
 
   "Jefe de Departamento": {
@@ -215,6 +220,7 @@ const PERMISSIONS = {
     canExportMedications: false,
     canCreateWarehouseRequests: true,
     canApproveWarehouseRequests: true,
+    canViewDepartmentStock: true,
   },
 };
 

@@ -378,13 +378,15 @@ const Departments = () => {
               </div>
               
               {/* Botón Stock en esquina superior derecha */}
-              <button
-                onClick={() => handleViewStock(department)}
-                className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
-                title="Ver Stock"
-              >
-                <Package className="w-5 h-5" />
-              </button>
+              <ProtectedComponent requiredPermission="canViewDepartmentStock">
+                <button
+                  onClick={() => handleViewStock(department)}
+                  className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
+                  title="Ver Stock"
+                >
+                  <Package className="w-5 h-5" />
+                </button>
+              </ProtectedComponent>
             </div>
             
             {/* Información del Jefe de Departamento */}
