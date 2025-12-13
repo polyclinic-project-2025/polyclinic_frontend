@@ -62,7 +62,7 @@ const stockDepartmentService = {
     try {
       console.log('AAAAAAAAA',departmentId);
       const response = await api.get(`/StockDepartment/department/${departmentId}/stock`);
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Error fetching stock by department:', error);
       throw error;

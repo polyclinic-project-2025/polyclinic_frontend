@@ -9,7 +9,7 @@ export const warehouseManagerService = {
   getAll: async () => {
     try {
       const response = await api.get('/WarehouseManager');
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener jefes de almacén';
       throw new Error(errorMessage);
@@ -24,7 +24,7 @@ export const warehouseManagerService = {
   getById: async (id) => {
     try {
       const response = await api.get(`/WarehouseManager/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener jefe de almacén';
       throw new Error(errorMessage);
@@ -38,7 +38,9 @@ export const warehouseManagerService = {
   getCurrent: async () => {
     try {
       const response = await api.get('/WarehouseManager/manager');
-      return response.data;
+      console.log('response manager: ', response);
+      console.log('response manager: ', response);
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener jefe de almacén actual';
       throw new Error(errorMessage);
@@ -53,7 +55,7 @@ export const warehouseManagerService = {
   create: async (managerData) => {
     try {
       const response = await api.post('/WarehouseManager', managerData);
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al asignar jefe de almacén';
       throw new Error(errorMessage);

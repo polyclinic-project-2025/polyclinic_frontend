@@ -9,7 +9,7 @@ export const warehouseRequestService = {
   getAll: async () => {
     try {
       const response = await api.get('/WarehouseRequest');
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener solicitudes';
       throw new Error(errorMessage);
@@ -24,7 +24,7 @@ export const warehouseRequestService = {
   getById: async (id) => {
     try {
       const response = await api.get(`/WarehouseRequest/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener solicitud';
       throw new Error(errorMessage);
@@ -39,7 +39,7 @@ export const warehouseRequestService = {
   getByStatus: async (status) => {
     try {
       const response = await api.get(`/WarehouseRequest/status`, { params: { status } });
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener solicitudes por estado';
       throw new Error(errorMessage);
@@ -54,7 +54,7 @@ export const warehouseRequestService = {
   getByDepartment: async (departmentId) => {
     try {
       const response = await api.get(`/WarehouseRequest/department`, { params: { id: departmentId } });
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener solicitudes del departamento';
       throw new Error(errorMessage);
@@ -72,7 +72,7 @@ export const warehouseRequestService = {
       const response = await api.get(`/WarehouseRequest/status-and-department`, {
         params: { status, departmentId }
       });
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener solicitudes filtradas';
       throw new Error(errorMessage);
@@ -87,7 +87,7 @@ export const warehouseRequestService = {
   create: async (requestData) => {
     try {
       const response = await api.post('/WarehouseRequest', requestData);
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al crear solicitud';
       throw new Error(errorMessage);

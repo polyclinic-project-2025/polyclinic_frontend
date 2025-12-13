@@ -179,35 +179,31 @@ const Warehouse = () => {
     try {
       setLoading(true);
       let data = [];
-      
-      if (isAdmin()) {
-        // Admin ve todas las solicitudes
+
+      if (isAdmin() || isWarehouseManager) {
         data = await warehouseRequestService.getAll();
-      } else if (isWarehouseManager) {
-        data = await warehouseRequestService.getAll();
-      } else if (isDepartmentHead) {
-        // Jefe de departamento ve todas las solicitudes de su departamento
-        data = await warehouseRequestService.getByDepartment(currentDepartmentId);
       } else {
-        // Doctor normal ve solo solicitudes de su departamento
         data = await warehouseRequestService.getByDepartment(currentDepartmentId);
       }
-      
-      setRequests(data);
+
+      setRequests(Array.isArray(data) ? data : []);
     } catch (err) {
-      const errorMessage = err.message || 'Error al cargar solicitudes';
-      setError(errorMessage);
-      setTimeout(() => setError(''), 5000);
+      setError(err.message || 'Error al cargar solicitudes');
+      setRequests([]); 
     } finally {
       setLoading(false);
     }
   };
+
 
   // --- cargar jefe de almacén actual (si tienes endpoint) ---
   const loadCurrentWarehouseManager = async () => {
     try {
       // Si tu servicio devuelve el jefe actual:
       const manager = await warehouseManagerService.getCurrent?.() ?? null;
+
+      console.log('manager',manager);
+      
       // si la API es diferente: ajusta la llamada
       setCurrentWarehouseManager(manager || null);
     } catch (err) {
@@ -364,19 +360,30 @@ const Warehouse = () => {
   // Ver detalles de solicitud
   const handleViewDetails = async (request) => {
     try {
-      const medicationsData = await medicationRequestService.getByWarehouseRequest(request.warehouseRequestId);
+      const medicationsData =
+        await medicationRequestService.getByWarehouseRequest(
+          request.warehouseRequestId
+        );
+
+      setRequestMedications(
+        Array.isArray(medicationsData) ? medicationsData : []
+      );
+
       const department = departments[request.departmentId] || { name: 'N/A' };
 
-      setRequestMedications(medicationsData);
       setSelectedRequest({
         ...request,
         departmentName: department.name,
       });
+
       setShowDetailsModal(true);
     } catch (err) {
+      console.error(err);
+      setRequestMedications([]);
       setError('Error al cargar detalles de la solicitud');
     }
   };
+
 
   // Aprobar solicitud
   const handleApproveRequest = async (requestId) => {
@@ -415,6 +422,7 @@ const Warehouse = () => {
 
           // Obtener los datos completos del medicamento
           const medicationData = await medicationService.getById(medicationId);
+          console.log('medicationData',medicationData);
 
           // Actualizar la cantidad en el almacén
           const updatedMedicationData = {
@@ -486,6 +494,7 @@ const Warehouse = () => {
       "-1": { label: 'Rechazada por Jefe de Departamento', color: 'bg-red-100 text-red-800', icon: XCircle },
       "-2": { label: 'Rechazada por Jefe de Almacén', color: 'bg-red-100 text-red-800', icon: XCircle }
     };
+    console.log('badges[status]',badges[status]);
     return badges[status] || { label: 'Desconocido', color: 'bg-gray-100 text-gray-800', icon: AlertCircle };
   };
 
@@ -965,7 +974,7 @@ const Warehouse = () => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Medicamentos Solicitados</h3>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {requestMedications.length > 0 ? (
+                  {
                     requestMedications.map((medReq) => (
                       <div key={medReq.medicationRequestId} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex justify-between items-start">
@@ -981,9 +990,7 @@ const Warehouse = () => {
                         </div>
                       </div>
                     ))
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No hay medicamentos en esta solicitud</p>
-                  )}
+                  }
                 </div>
               </div>
 

@@ -9,7 +9,7 @@ export const medicationRequestService = {
   getAll: async () => {
     try {
       const response = await api.get('/MedicationRequest');
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener solicitudes de medicamentos';
       throw new Error(errorMessage);
@@ -24,7 +24,7 @@ export const medicationRequestService = {
   getById: async (id) => {
     try {
       const response = await api.get(`/MedicationRequest/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener solicitud de medicamento';
       throw new Error(errorMessage);
@@ -41,7 +41,7 @@ export const medicationRequestService = {
       const response = await api.get(`/MedicationRequest/warehouse-request`, {
         params: { warehouseRequestId }
       });
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al obtener medicamentos de la solicitud';
       throw new Error(errorMessage);
@@ -56,7 +56,7 @@ export const medicationRequestService = {
   create: async (requestData) => {
     try {
       const response = await api.post('/MedicationRequest', requestData);
-      return response.data;
+      return response;
     } catch (error) {
       const errorMessage = error.response?.data?.errorMessage || 'Error al crear solicitud de medicamento';
       throw new Error(errorMessage);

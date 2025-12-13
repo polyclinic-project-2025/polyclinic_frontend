@@ -50,7 +50,7 @@ const medicationService = {
   // Update medication
   update: async (id, medicationData) => {
     try {
-      const data = await api.put(`/Medication/${id}`, {
+      const response = await api.put(`/Medication/${id}`, {
         format: medicationData.format,
         commercialName: medicationData.commercialName,
         commercialCompany: medicationData.commercialCompany,
@@ -65,7 +65,7 @@ const medicationService = {
         maxQuantityNurse: medicationData.maxQuantityNurse
       });
       console.log('medicationData.quantityWarehouse',medicationData.quantityWarehouse);
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Error updating medication:', error);
       throw error;
