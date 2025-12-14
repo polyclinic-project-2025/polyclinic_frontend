@@ -13,7 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
 import PatientCIValidator from '../components/PatientCIValidator';
 import Pagination from '../components/Pagination';
-import { formatDateMedium } from '../utils/dateUtils';
+import { formatDateMedium, formatDateTimeForBackend } from '../utils/dateUtils';
 
 const Patients = () => {
   const { hasRole } = useAuth();
@@ -522,7 +522,7 @@ const Patients = () => {
         departmentFromId: derivationFormData.departmentFromId,
         departmentToId: derivationFormData.departmentToId,
         patientId: selectedDerivationPatient.patientId,
-        dateTimeDer: derivationFormData.dateTimeDer.toISOString()
+        dateTimeDer: formatDateTimeForBackend(derivationFormData.dateTimeDer)
       };
 
       await derivationService.create(dataToSend);
@@ -600,7 +600,7 @@ const Patients = () => {
         puestoExterno: referralFormData.puestoExterno,
         departmentToId: referralFormData.departmentToId,
         patientId: selectedReferralPatient.patientId,
-        dateTimeRem: referralFormData.dateTimeRem.toISOString()
+        dateTimeRem: formatDateTimeForBackend(referralFormData.dateTimeRem)
       };
 
       await referralService.create(dataToSend);

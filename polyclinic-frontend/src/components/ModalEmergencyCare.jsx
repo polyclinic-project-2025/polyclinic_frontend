@@ -12,7 +12,8 @@ import {
   formatDateTimeForDisplay,
   formatTimeOnly,
   isDateDifferentFromToday,
-  formatDateShort
+  formatDateShort,
+  formatDateTimeForBackend
 } from "../utils/dateUtils";
 
 const ModalEmergencyCare = ({ 
@@ -239,7 +240,7 @@ const ModalEmergencyCare = ({
       console.log("Paciente ID:", selectedPatientId);
       console.log("Guardia asignada:", userEmergencyRoom);
       console.log("Fecha de atención:", formData.careDate);
-      console.log("Fecha ISO:", formData.careDate.toISOString());
+      console.log("Fecha formateada:", formatDateTimeForBackend(formData.careDate));
       console.log("Hora exacta:", `${formData.careDate.getHours()}:${formData.careDate.getMinutes()}:${formData.careDate.getSeconds()}`);
       
       // Usar siempre la guardia del usuario
@@ -248,7 +249,7 @@ const ModalEmergencyCare = ({
       const dataToSend = {
         patientId: selectedPatientId,
         emergencyRoomId: emergencyRoomIdToUse,
-        careDate: formData.careDate.toISOString(), // Enviar datetime completo con hora actual
+        careDate: formatDateTimeForBackend(formData.careDate), // Enviar datetime en hora local
         diagnosis: formData.diagnosis.trim(),
       };
 

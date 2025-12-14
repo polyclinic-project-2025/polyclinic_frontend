@@ -9,6 +9,7 @@ import { employeeService } from "../services/employeeService.js";
 import { departmentHeadService } from "../services/departmentHeadService";
 import { userService } from "../services/userService";
 import { useAuth } from "../context/AuthContext";
+import { formatDateTimeForBackend } from "../utils/dateUtils";
 
 const ModalConsultation = ({
   isOpen,
@@ -182,7 +183,7 @@ const ModalConsultation = ({
       const dataToSend = {
         referralId: formData.patientId,
         doctorId: formData.doctorId,
-        dateTimeCRem: new Date(formData.dateTime).toISOString(),
+        dateTimeCRem: formatDateTimeForBackend(new Date(formData.dateTime)),
         departmentHeadId: departmentHeadId,
         diagnosis: formData.diagnostic.trim(),
       };

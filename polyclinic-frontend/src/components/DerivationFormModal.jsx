@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { departmentService } from '../services/departmentService';
 import PatientCIValidator from './PatientCIValidator';
+import { formatDateTimeForBackend } from '../utils/dateUtils';
 
 const DerivationFormModal = ({ 
   isOpen, 
@@ -48,7 +49,7 @@ const DerivationFormModal = ({
     const dataToSend = {
       ...formData,
       patientId: selectedPatient.patientId,
-      dateTimeDer: formData.dateTimeDer.toISOString()
+      dateTimeDer: formatDateTimeForBackend(formData.dateTimeDer)
     };
 
     onSubmit(dataToSend, selectedPatient);

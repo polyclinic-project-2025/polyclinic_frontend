@@ -8,8 +8,9 @@
  * 
  * Categorías de funciones:
  * 
- * 1. BACKEND (DateOnly):
- *    - formatDateForBackend() - Enviar fechas al backend
+ * 1. BACKEND (DateOnly y DateTime):
+ *    - formatDateForBackend() - Enviar fechas (DateOnly) al backend
+ *    - formatDateTimeForBackend() - Enviar fecha y hora (DateTime) al backend
  *    - parseDateFromBackend() - Recibir fechas del backend
  * 
  * 2. UTILIDADES:
@@ -50,6 +51,36 @@ export const formatDateForBackend = (date) => {
   const day = String(date.getDate()).padStart(2, '0');
   
   return `${year}-${month}-${day}`;
+};
+
+/**
+ * Formatea una fecha y hora de JavaScript a formato ISO UTC para DateTime del backend.
+ * Trata la hora local como si fuera UTC (sin conversión de zona horaria).
+ * Esto evita el desfase de horas causado por toISOString().
+ * 
+ * @param {Date} date - La fecha y hora a formatear
+ * @returns {string} Fecha y hora en formato ISO UTC (con 'Z' al final)
+ */
+export const formatDateTimeForBackend = (date) => {
+  if (!date) return null;
+  
+  // Validar que sea una fecha válida
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    console.error('formatDateTimeForBackend: fecha inválida', date);
+    return null;
+  }
+
+  // Obtener los componentes de la fecha en hora local
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+  // Retornar en formato ISO UTC tratando la hora local como UTC
+  // Esto satisface el requisito de PostgreSQL (Kind=UTC) sin cambiar la hora
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}Z`;
 };
 
 /**

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { departmentService } from '../services/departmentService';
 import PatientCIValidator from './PatientCIValidator';
+import { formatDateTimeForBackend } from '../utils/dateUtils';
 
 const ReferralFormModal = ({ 
   isOpen, 
@@ -48,7 +49,7 @@ const ReferralFormModal = ({
     const dataToSend = {
       ...formData,
       patientId: selectedPatient.patientId,
-      dateTimeRem: formData.dateTimeRem.toISOString()
+      dateTimeRem: formatDateTimeForBackend(formData.dateTimeRem)
     };
 
     onSubmit(dataToSend, selectedPatient);
