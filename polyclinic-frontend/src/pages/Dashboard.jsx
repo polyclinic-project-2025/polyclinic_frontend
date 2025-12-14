@@ -18,8 +18,6 @@ import ConsultationsDerivation from "./ConsultationsDerivation";
 import Employees from "./Employees";
 import Medications from "./Medications";
 import Patients from "./Patients";
-import RecentConsultationsWidget from "../components/RecentConsultationsWidget";
-import analyticsService from "../services/analyticsService";
 import ReporteFuncion1 from "./reports/ReporteFuncion1";
 import ReporteFuncion2 from "./reports/ReporteFuncion2";
 import ReporteDateRange from "./reports/ReporteDateRange";
@@ -192,7 +190,7 @@ const Dashboard = () => {
         { id: "funcion2", name: "Función 2" },
         { id: "daterange", name: "Consultas por Rango de Fechas" },
         { id: "last10", name: "Últimas 10 Consultas" },
-        { id: "funcion5", name: "Función 5" },
+        { id: "funcion5", name: "Consumo Acumulado de Medicamentos" },
         { id: "funcion6", name: "Función 6" },
         { id: "funcion7", name: "Función 7" }
       ]
@@ -334,8 +332,6 @@ const Dashboard = () => {
         return <UsersView />;
       case "departments":
         return <Departments />;
-      case "warehouse":
-        return <Warehouse />;
       case "patients":
         return <Patients />;
       case "consultations":

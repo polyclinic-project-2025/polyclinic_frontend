@@ -1,10 +1,11 @@
 // pages/reportes/ReporteFuncion5.jsx
-import React, { useState } from "react";
-import { BarChart3, Activity } from "lucide-react";
+import React from "react";
+import { Activity, BarChart3 } from "lucide-react";
+import MedicationConsumptionFilter from "../../components/MedicationConsumptionFilter";
+import analyticsService from "../../services/analyticsService";
+import medicationService from "../../services/medicationService";
 
 const ReporteFuncion5 = () => {
-  const [loading, setLoading] = useState(false);
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -15,10 +16,10 @@ const ReporteFuncion5 = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              Función 5
+              Consumo Acumulado de Medicamentos
             </h1>
             <p className="text-orange-50 mt-1">
-              Descripción de la funcionalidad del reporte 5
+              Consulta el consumo mensual y compara con niveles de inventario
             </p>
           </div>
         </div>
@@ -29,25 +30,14 @@ const ReporteFuncion5 = () => {
         <BarChart3 className="w-4 h-4" />
         <span>Reportes</span>
         <span>/</span>
-        <span className="text-orange-600 font-semibold">Función 5</span>
+        <span className="text-orange-600 font-semibold">Consumo de Medicamentos</span>
       </div>
 
-      {/* Contenido del Reporte */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Contenido del Reporte
-        </h2>
-        
-        <div className="text-center py-12">
-          <Activity className="w-16 h-16 text-orange-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">
-            Reporte en desarrollo
-          </p>
-          <p className="text-gray-400 text-sm mt-2">
-            Aquí irá el contenido específico de la Función 5
-          </p>
-        </div>
-      </div>
+      {/* Widget de Búsqueda de Consumo */}
+      <MedicationConsumptionFilter 
+        analyticsService={analyticsService}
+        medicationService={medicationService}
+      />
     </div>
   );
 };
