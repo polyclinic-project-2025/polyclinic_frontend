@@ -29,6 +29,26 @@ const analyticsService = {
       console.error('Error fetching analytics consultations by range:', error);
       throw error;
     }
+  },
+
+  // Obtener consumo mensual de un medicamento
+  getMedicationConsumption: async (params) => {
+    try {
+      const response = await api.get('/Analytics/medication-consumption', {
+        params: {
+          medicationId: params.medicationId,
+          month: params.month,
+          year: params.year,
+        },
+      });
+
+      // El backend devuelve: { success: true, data: {...}, message: "..." }
+      // El data contiene el MedicationConsumptionReadModel
+      return response;
+    } catch (error) {
+      console.error('Error fetching medication consumption:', error);
+      throw error;
+    }
   }
 };
 
