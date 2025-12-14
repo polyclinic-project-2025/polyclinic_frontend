@@ -1,6 +1,7 @@
 // components/ModalMedicationDetails.jsx
 import React from 'react';
 import { X } from 'lucide-react';
+import { formatDateShort } from '../utils/dateUtils';
 
 const ModalMedicationDetails = ({ show, onClose, medication }) => {
   if (!show || !medication) return null;

@@ -171,6 +171,13 @@ const ModalEmergencyGuard = ({ isOpen, onClose, modalMode, selected, onSuccess }
         guardDate: formatDateForBackend(formData.guardDate),
       };
 
+      console.log("=== FECHA FINAL ===");
+      console.log("guardDate objeto Date:", formData.guardDate);
+      console.log("guardDate.getFullYear():", formData.guardDate.getFullYear());
+      console.log("guardDate.getMonth():", formData.guardDate.getMonth());
+      console.log("guardDate.getDate():", formData.guardDate.getDate());
+      console.log("guardDate formateada:", dataToSend.guardDate);
+      console.log("===================");
       console.log("Enviando datos guardia al backend:", dataToSend);
 
       if (modalMode === "create") {
@@ -197,7 +204,7 @@ const ModalEmergencyGuard = ({ isOpen, onClose, modalMode, selected, onSuccess }
   };
 
   const handleDateChange = (date) => {
-    console.log("Fecha seleccionada:", date);
+    console.log("Fecha seleccionada original:", date);
     
     // Si la fecha es null, establecerla como null
     if (!date) {
@@ -207,8 +214,16 @@ const ModalEmergencyGuard = ({ isOpen, onClose, modalMode, selected, onSuccess }
       return;
     }
 
+    // Crear una nueva fecha configurada al mediodía para evitar problemas de zona horaria
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(12, 0, 0, 0);
+    
+    console.log("Fecha normalizada:", normalizedDate);
+    console.log("Fecha normalizada ISO:", normalizedDate.toISOString());
+    console.log("Fecha formateada para backend:", formatDateForBackend(normalizedDate));
+
     // Verificar si la fecha es en el pasado
-    if (isDateBeforeToday(date)) {
+    if (isDateBeforeToday(normalizedDate)) {
       setFormErrors(prev => ({ ...prev, guardDate: true }));
       setError("No puede seleccionar fechas pasadas");
     } else {
@@ -217,7 +232,7 @@ const ModalEmergencyGuard = ({ isOpen, onClose, modalMode, selected, onSuccess }
       setError("");
     }
 
-    setFormData({ ...formData, guardDate: date });
+    setFormData({ ...formData, guardDate: normalizedDate });
   };
 
   if (!isOpen) return null;

@@ -982,7 +982,7 @@ const Patients = () => {
                     <Calendar className="w-4 h-4" />
                     <span>
                       {derivation.dateTimeDer ? 
-                        {formatDateMedium(derivation.dateTimeDer)} : 'Fecha no disponible'
+                        formatDateMedium(derivation.dateTimeDer) : 'Fecha no disponible'
                       }
                     </span>
                   </div>
@@ -1068,7 +1068,7 @@ const Patients = () => {
                     <Calendar className="w-4 h-4" />
                     <span>
                       {referral.dateTimeRem ? 
-                        {formatDateMedium(referral.dateTimeRem)} : 'Fecha no disponible'
+                        formatDateMedium(referral.dateTimeRem) : 'Fecha no disponible'
                       }
                     </span>
                   </div>

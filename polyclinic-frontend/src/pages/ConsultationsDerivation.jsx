@@ -26,6 +26,7 @@ import {
 import ModalConsultationDerivation from '../components/ModalConsultationDerivation';
 import ModalMedicationsDerivation from '../components/ModalMedicationsDerivation';
 import Pagination from "../components/Pagination";
+import { formatDateMedium } from "../utils/dateUtils";
 
 import medicationDerivationsService from '../services/medicationDerivationService';
 import medicationService from '../services/medicationService';

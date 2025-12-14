@@ -108,8 +108,18 @@ export const isDateBeforeToday = (date) => {
  * @returns {string} Fecha formateada en español
  */
 export const formatDateForDisplay = (date) => {
-  if (!date) return "";
-  return date.toLocaleDateString("es-ES", {
+  if (!date) return "";  
+  // Si es un string en formato YYYY-MM-DD (DateOnly del backend), parsearlo correctamente
+  if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const parsedDate = parseDateFromBackend(date);
+    return parsedDate.toLocaleDateString("es-ES", {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+    return date.toLocaleDateString("es-ES", {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -145,6 +155,13 @@ export const formatDateTimeForDisplay = (date) => {
  */
 export const formatDateShort = (date) => {
   if (!date) return "";
+  
+  // Si es un string en formato YYYY-MM-DD (DateOnly del backend), parsearlo correctamente
+  if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const parsedDate = parseDateFromBackend(date);
+    return parsedDate.toLocaleDateString('es-ES');
+  }
+  
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('es-ES');
 };
@@ -158,6 +175,17 @@ export const formatDateShort = (date) => {
  */
 export const formatDateMedium = (date) => {
   if (!date) return "";
+  
+  // Si es un string en formato YYYY-MM-DD (DateOnly del backend), parsearlo correctamente
+  if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const parsedDate = parseDateFromBackend(date);
+    return parsedDate.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  }
+  
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('es-ES', {
     year: 'numeric',
