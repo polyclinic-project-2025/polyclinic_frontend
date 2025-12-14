@@ -1,9 +1,10 @@
-// pages/Patients.jsx (CON BOTONES COMO DEPARTMENTS)
+// pages/Patients.jsx (COMPLETO CON HISTORIAL)
 import React, { useState, useEffect } from 'react';
 import {
   Users, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2,
   User, Phone, MapPin, IdCard, Calendar, Filter,
-  ArrowRight, ExternalLink, Building2, Download
+  ArrowRight, ExternalLink, Building2, Download,
+  History // NUEVO IMPORT
 } from 'lucide-react';
 import { patientService } from '../services/patientService';
 import { derivationService } from '../services/derivationService';
@@ -14,6 +15,8 @@ import { ProtectedComponent, usePermissions } from '../middleware/PermissionMidd
 import PatientCIValidator from '../components/PatientCIValidator';
 import Pagination from '../components/Pagination';
 import { formatDateMedium, formatDateTimeForBackend } from '../utils/dateUtils';
+import PatientHistoryModal from '../components/PatientHistoryModal'; // NUEVO IMPORT
+
 
 const Patients = () => {
   const { hasRole } = useAuth();
@@ -70,6 +73,10 @@ const Patients = () => {
   // Estados para paginación
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
+
+  // NUEVOS ESTADOS PARA HISTORIAL
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedPatientForHistory, setSelectedPatientForHistory] = useState(null);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -356,6 +363,13 @@ const Patients = () => {
   const getDepartmentName = (departmentId) => {
     const dept = departments.find(d => d.departmentId === departmentId);
     return dept ? dept.name : 'Departamento no encontrado';
+  };
+
+  // ========== NUEVA FUNCIÓN PARA HISTORIAL ==========
+  const handleViewHistory = (patient) => {
+    setSelectedPatientForHistory(patient);
+    setShowHistoryModal(true);
+    setError('');
   };
 
   // ========== FUNCIONES PARA PACIENTES ==========
@@ -845,7 +859,7 @@ const Patients = () => {
 
       {/* CONTENIDO SEGÚN FILTRO */}
 
-      {/* Grid de Pacientes (CON BOTONES COMO DEPARTMENTS) */}
+      {/* Grid de Pacientes (CON BOTÓN DE HISTORIAL) */}
       {filterType === 'all' && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -869,8 +883,17 @@ const Patients = () => {
                   </div>
                 </div>
                 
-                {/* BOTONES DE ACCIÓN PROTEGIDOS - COMO DEPARTMENTS */}
+                {/* BOTONES DE ACCIÓN PROTEGIDOS - CON HISTORIAL */}
                 <div className="flex gap-2">
+                  {/* BOTÓN DE HISTORIAL */}
+                  <button
+                    onClick={() => handleViewHistory(patient)}
+                    className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
+                    title="Ver Historial"
+                  >
+                    <History className="w-4 h-4" />
+                  </button>
+                  
                   <ProtectedComponent requiredPermission="canEditPatients">
                     <button
                       onClick={() => handleEditPatient(patient)}
@@ -1125,6 +1148,16 @@ const Patients = () => {
           </p>
         </div>
       )}
+
+      {/* Modal de Historial */}
+      <PatientHistoryModal
+        isOpen={showHistoryModal}
+        onClose={() => {
+          setShowHistoryModal(false);
+          setSelectedPatientForHistory(null);
+        }}
+        patientId={selectedPatientForHistory?.patientId}
+      />
 
       {/* Modal de Formulario de Paciente */}
       {showModalForm && (
