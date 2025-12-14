@@ -27,6 +27,8 @@ import ReporteLast10 from "./reports/ReporteLast10";
 import ReporteFuncion5 from "./reports/ReporteFuncion5";
 import ReporteFuncion6 from "./reports/ReporteFuncion6";
 import ReporteFuncion7 from "./reports/ReporteFuncion7";
+import EmergencyGuard from "./EmergencyGuard";
+import EmergencyCare from "./EmergencyCare";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -196,7 +198,14 @@ const Dashboard = () => {
         { id: "funcion6", name: "Función 6" },
         { id: "funcion7", name: "Función 7" }
       ]
-    }
+    },
+    {
+      id: "emergency",
+      modes: [
+        { id: "guard", name: "Guardias" },
+        { id: "care", name: "Atenciones" }
+      ]
+    },
   ];
 
   const handleItemClick = (itemId) => {
@@ -301,6 +310,28 @@ const Dashboard = () => {
             );
         }
       }
+      if (selectedMode.itemId === 'emergency') {
+        switch (mode.id) {
+          case "guard":
+            return <EmergencyGuard />;
+          case "care":
+            return <EmergencyCare />;
+          default:
+            return (
+              <div className="text-center py-12">
+                <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-6 max-w-md mx-auto">
+                  <AlertCircle className="w-16 h-16 text-cyan-600 mx-auto mb-4" />
+                  <p className="text-gray-700 text-lg font-semibold mb-2">
+                    {module.name}
+                  </p>
+                  <p className="text-cyan-700 text-xl font-bold">
+                    Modo: {mode.name}
+                  </p>
+                </div>
+              </div>
+            );
+        }
+      }
 
       switch (mode.id) {
         case "referral":
@@ -349,13 +380,6 @@ const Dashboard = () => {
           );
         }
         break;
-      case "emergency":
-        return (
-          <div className="text-center py-12">
-            <Pill className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Cuerpo de Guardia en desarrollo</p>
-          </div>
-        );
       case "staff":
         return (
           <div className="text-center py-12">
