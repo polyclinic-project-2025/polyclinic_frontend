@@ -14,6 +14,8 @@ import {
   FileText,
   Pill,
   Trash2,
+  ChevronRight,
+  ChevronDown,  // Agregado
 } from "lucide-react";
 import { emergencyRoomCareService } from "../services/emergencyRoomCareService";
 import { emergencyRoomService } from "../services/emergencyRoomService";
@@ -22,17 +24,16 @@ import ModalEmergencyCare from "../components/ModalEmergencyCare";
 import ModalMedicationEmergency from "../components/ModalMedicationEmergency";
 import { medicationEmergencyService } from "../services/medicationEmergencyService";
 import { useAuth } from "../context/AuthContext";
-import { userService } from "../services/userService"; // Cambiamos a userService
+import { userService } from "../services/userService";
 
 const EmergencyCare = () => {
   const { can } = usePermissions();
   const { user } = useAuth();
   const [cares, setCares] = useState([]);
   const [careMedications, setCareMedications] = useState({});
+  const [expandedCards, setExpandedCards] = useState({}); // Nuevo estado para expandir/colapsar
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchType, setSearchType] = useState("all");
-  const [searchDate, setSearchDate] = useState(new Date());
   const [showModalCare, setShowModalCare] = useState(false);
   const [showModalMedication, setShowModalMedication] = useState(false);
   const [modalMode, setModalMode] = useState("create");
@@ -52,7 +53,6 @@ const EmergencyCare = () => {
     }
   }, []);
 
-  // Cargar perfil del usuario usando userService
   const loadUserProfileAndCheckDuty = async () => {
     if (!user?.id) return;
     
@@ -64,12 +64,10 @@ const EmergencyCare = () => {
       console.log("Perfil del usuario:", profile);
       
       if (profile && profile.profile) {
-        // El profile.profile debería contener employeeId si es doctor
         const userProfile = profile.profile;
         console.log("Información del perfil:", userProfile);
         
         if (userProfile.employeeId) {
-          // Tenemos el employeeId, ahora verificar si está de guardia
           setDoctorInfo({
             employeeId: userProfile.employeeId,
             identification: userProfile.identification,
@@ -87,21 +85,18 @@ const EmergencyCare = () => {
       }
     } catch (err) {
       console.error("Error cargando perfil del usuario:", err);
-      // Si hay error, intentar método alternativo
       await tryAlternativeMethod();
     } finally {
       setCheckingDuty(false);
     }
   };
 
-  // Método alternativo: buscar por email en las guardias
   const tryAlternativeMethod = async () => {
     try {
       console.log("Intentando método alternativo...");
       const today = new Date().toISOString().split('T')[0];
       const guards = await emergencyRoomService.getByDate(today);
       
-      // Intentar encontrar al doctor por email (el email del usuario)
       const userGuard = guards.find(guard => 
         guard.doctorEmail === user.email
       );
@@ -142,13 +137,10 @@ const EmergencyCare = () => {
         name: profile.name
       });
       
-      // Buscar si el doctor está en las guardias de hoy
       const isOnDuty = guards.some(guard => {
-        // Comparar por employeeId
         if (guard.doctorId === profile.employeeId) {
           return true;
         }
-        // También comparar por identificación si está disponible
         if (profile.identification && guard.doctorIdentification === profile.identification) {
           return true;
         }
@@ -195,8 +187,15 @@ const EmergencyCare = () => {
     }
   };
 
+  // Función para alternar el estado expandido de una tarjeta
+  const toggleExpandCard = (careId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [careId]: !prev[careId]
+    }));
+  };
+
   const handleCreate = () => {
-    // Admin NO puede crear atenciones
     if (can("canCreateEmergencyGuards")) {
       setError("Los administradores no pueden crear atenciones de emergencia");
       setTimeout(() => setError(""), 3000);
@@ -214,7 +213,6 @@ const EmergencyCare = () => {
       return;
     }
 
-    // Solo doctores y department heads que estén de guardia pueden crear
     if (!isUserOnDuty) {
       setError("Solo puedes crear atenciones cuando estás de guardia");
       setTimeout(() => setError(""), 3000);
@@ -236,7 +234,6 @@ const EmergencyCare = () => {
       isCreator: isCreator
     });
     
-    // Admin NO puede editar atenciones
     if (can("canCreateEmergencyGuards")) {
       setError("Los administradores no pueden editar atenciones de emergencia");
       setTimeout(() => setError(""), 3000);
@@ -249,14 +246,12 @@ const EmergencyCare = () => {
       return;
     }
 
-    // Si no tenemos doctorInfo, no permitir editar
     if (!doctorInfo) {
       setError("No se pudo verificar tu información de doctor");
       setTimeout(() => setError(""), 3000);
       return;
     }
 
-    // Solo el creador o department heads pueden editar
     if (!isCreator && !can("canEditEmergencyGuards")) {
       setError("Solo puedes editar las atenciones que has creado");
       setTimeout(() => setError(""), 3000);
@@ -272,7 +267,6 @@ const EmergencyCare = () => {
   const handleDelete = async (care) => {
     const isCreator = doctorInfo && care.doctorId === doctorInfo.employeeId;
     
-    // Admin NO puede eliminar atenciones
     if (can("canCreateEmergencyGuards")) {
       setError("Los administradores no pueden eliminar atenciones de emergencia");
       setTimeout(() => setError(""), 3000);
@@ -285,14 +279,12 @@ const EmergencyCare = () => {
       return;
     }
 
-    // Si no tenemos doctorInfo, no permitir eliminar
     if (!doctorInfo) {
       setError("No se pudo verificar tu información de doctor");
       setTimeout(() => setError(""), 3000);
       return;
     }
 
-    // Solo el creador o department heads pueden eliminar
     if (!isCreator && !can("canDeleteEmergencyGuards")) {
       setError("Solo puedes eliminar las atenciones que has creado");
       setTimeout(() => setError(""), 3000);
@@ -316,7 +308,6 @@ const EmergencyCare = () => {
   const handleAddMedication = (care) => {
     const isCreator = doctorInfo && care.doctorId === doctorInfo.employeeId;
     
-    // Admin NO puede recetar medicamentos
     if (can("canCreateEmergencyGuards")) {
       setError("Los administradores no pueden recetar medicamentos en emergencia");
       setTimeout(() => setError(""), 3000);
@@ -329,14 +320,12 @@ const EmergencyCare = () => {
       return;
     }
 
-    // Si no tenemos doctorInfo, no permitir recetar
     if (!doctorInfo) {
       setError("No se pudo verificar tu información de doctor");
       setTimeout(() => setError(""), 3000);
       return;
     }
 
-    // Solo el creador o department heads pueden recetar medicamentos
     if (!isCreator && !can("canEditEmergencyGuards")) {
       setError("Solo puedes recetar medicamentos en las atenciones que has creado");
       setTimeout(() => setError(""), 3000);
@@ -363,34 +352,18 @@ const EmergencyCare = () => {
       setLoading(true);
       let data = [];
 
-      switch (searchType) {
-        case "date":
-          const dateStr = searchDate.toISOString().split('T')[0];
-          data = await emergencyRoomCareService.getByDate(dateStr);
-          break;
-        case "doctorName":
-          data = await emergencyRoomCareService.getByDoctorName(searchTerm);
-          break;
-        case "doctorIdentification":
-          data = await emergencyRoomCareService.getByDoctorIdentification(searchTerm);
-          break;
-        case "patientName":
-          data = await emergencyRoomCareService.getByPatientName(searchTerm);
-          break;
-        case "patientIdentification":
-          data = await emergencyRoomCareService.getByPatientIdentification(searchTerm);
-          break;
-        default:
-          data = await emergencyRoomCareService.getAllWithDetails();
-          if (searchTerm) {
-            data = data.filter(care =>
-              (care.patientName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-              (care.patientIdentification?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-              (care.doctorName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-              (care.doctorIdentification?.toLowerCase() || "").includes(searchTerm.toLowerCase())
-            );
-          }
-          break;
+      // SOLO BÚSQUEDA GENERAL - BUSCAR EN TODO
+      data = await emergencyRoomCareService.getAllWithDetails();
+      
+      // Aplicar filtro local con el término de búsqueda
+      if (searchTerm) {
+        data = data.filter(care =>
+          (care.patientName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (care.patientIdentification?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (care.doctorName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (care.doctorIdentification?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (care.diagnosis?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+        );
       }
 
       setCares(data);
@@ -404,7 +377,8 @@ const EmergencyCare = () => {
   };
 
   const filteredCares = cares.filter((care) => {
-    if (searchType === "all" && searchTerm) {
+    // Filtro local para búsqueda en tiempo real
+    if (searchTerm) {
       return (
         (care.patientName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
         (care.patientIdentification?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
@@ -489,55 +463,23 @@ const EmergencyCare = () => {
         )}
       </div>
 
-      {/* Resto del código se mantiene igual... */}
-      {/* Search Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-1">
-          <select
-            value={searchType}
-            onChange={(e) => setSearchType(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-          >
-            <option value="all">Buscar en todo</option>
-            <option value="date">Por fecha</option>
-            <option value="doctorName">Por nombre del doctor</option>
-            <option value="doctorIdentification">Por CI del doctor</option>
-            <option value="patientName">Por nombre del paciente</option>
-            <option value="patientIdentification">Por CI del paciente</option>
-          </select>
-        </div>
-
-        {searchType === "date" ? (
-          <div className="md:col-span-2">
-            <input
-              type="date"
-              value={searchDate.toISOString().split('T')[0]}
-              onChange={(e) => setSearchDate(new Date(e.target.value))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            />
-          </div>
-        ) : (
-          <div className="md:col-span-2 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder={
-                searchType === "doctorName" 
-                  ? "Buscar por nombre del doctor..." 
-                  : searchType === "doctorIdentification"
-                  ? "Buscar por CI del doctor..."
-                  : searchType === "patientName"
-                  ? "Buscar por nombre del paciente..."
-                  : searchType === "patientIdentification"
-                  ? "Buscar por CI del paciente..."
-                  : "Buscar atenciones..."
+      {/* Search Bar - SOLO BARRA DE BÚSQUEDA Y BOTÓN */}
+      <div className="flex gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Buscar atenciones por paciente, doctor o diagnóstico..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch();
               }
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            />
-          </div>
-        )}
+            }}
+            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+          />
+        </div>
 
         <button
           onClick={handleSearch}
@@ -641,13 +583,38 @@ const EmergencyCare = () => {
               {/* Información de la atención */}
               <div className="space-y-2">
                 {hasMedications && (
-                  <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm text-green-800">
-                      <Pill className="w-4 h-4" />
-                      <span className="font-medium">
-                        {medications.length} medicamento{medications.length !== 1 ? 's' : ''} recetado{medications.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
+                  <div className="mb-3">
+                    <button
+                      onClick={() => toggleExpandCard(careId)}
+                      className="w-full p-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 text-sm text-green-800">
+                        <Pill className="w-4 h-4" />
+                        <span className="font-medium">
+                          {medications.length} medicamento{medications.length !== 1 ? 's' : ''} recetado{medications.length !== 1 ? 's' : ''}
+                        </span>
+                        {expandedCards[careId] ? (
+                          <ChevronDown className="w-4 h-4 ml-auto" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 ml-auto" />
+                        )}
+                      </div>
+                    </button>
+                    
+                    {/* Lista de medicamentos expandida */}
+                    {expandedCards[careId] && (
+                      <div className="mt-2 space-y-2 pl-2">
+                        {medications.map((med, index) => (
+                          <div key={index} className="p-2 bg-white border border-green-100 rounded text-sm">
+                            <div className="font-medium text-gray-800">{med.commercialName || med.medicationName || 'Medicamento'}</div>
+                            <div className="text-gray-600">Cantidad: {med.quantity || 'N/A'}</div>
+                            {med.scientificName && (
+                              <div className="text-gray-500 italic text-xs">{med.scientificName}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -694,7 +661,7 @@ const EmergencyCare = () => {
         <div className="text-center py-12">
           <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">
-            {searchTerm || searchType !== "all"
+            {searchTerm
               ? "No se encontraron atenciones con ese criterio"
               : "No hay atenciones registradas"}
           </p>
@@ -712,7 +679,7 @@ const EmergencyCare = () => {
             setSuccess(modalMode === "create" ? "Atención creada exitosamente" : "Atención actualizada exitosamente");
             setTimeout(() => setSuccess(""), 3000);
             loadCares();
-            loadUserProfileAndCheckDuty(); // Recargar estado de guardia
+            loadUserProfileAndCheckDuty();
           }}
           isUserOnDuty={isUserOnDuty}
         />

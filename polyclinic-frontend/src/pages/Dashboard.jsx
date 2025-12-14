@@ -27,7 +27,6 @@ import ReporteLast10 from "./reports/ReporteLast10";
 import ReporteFuncion5 from "./reports/ReporteFuncion5";
 import ReporteFuncion6 from "./reports/ReporteFuncion6";
 import ReporteFuncion7 from "./reports/ReporteFuncion7";
-import Reportes from "./Reportes";
 import EmergencyGuard from "./EmergencyGuard";
 import EmergencyCare from "./EmergencyCare";
 

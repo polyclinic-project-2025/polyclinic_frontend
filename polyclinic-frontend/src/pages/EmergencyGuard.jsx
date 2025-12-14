@@ -16,7 +16,6 @@ import { emergencyRoomService } from "../services/emergencyRoomService";
 import { usePermissions } from "../middleware/PermissionMiddleware";
 import ModalEmergencyGuard from "../components/ModalEmergencyGuard";
 import { useAuth } from "../context/AuthContext";
-import CustomDatePicker from "../components/CustmonDatePicker";
 
 const EmergencyGuard = () => {
   const { can } = usePermissions();
@@ -24,8 +23,6 @@ const EmergencyGuard = () => {
   const [guards, setGuards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchType, setSearchType] = useState("all");
-  const [searchDate, setSearchDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("create");
   const [selectedGuard, setSelectedGuard] = useState(null);
@@ -114,26 +111,16 @@ const EmergencyGuard = () => {
       setLoading(true);
       let data = [];
 
-      switch (searchType) {
-        case "date":
-          const dateStr = searchDate.toISOString().split('T')[0];
-          data = await emergencyRoomService.getByDate(dateStr);
-          break;
-        case "doctorName":
-          data = await emergencyRoomService.getByDoctorName(searchTerm);
-          break;
-        case "doctorIdentification":
-          data = await emergencyRoomService.getByDoctorIdentification(searchTerm);
-          break;
-        default:
-          data = await emergencyRoomService.getAllWithDoctor();
-          if (searchTerm) {
-            data = data.filter(guard =>
-              (guard.doctorName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-              (guard.doctorIdentification?.toLowerCase() || "").includes(searchTerm.toLowerCase())
-            );
-          }
-          break;
+      // SOLO BÚSQUEDA GENERAL - BUSCAR EN TODO
+      data = await emergencyRoomService.getAllWithDoctor();
+      
+      // Aplicar filtro local con el término de búsqueda
+      if (searchTerm) {
+        data = data.filter(guard =>
+          (guard.doctorName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (guard.doctorIdentification?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (guard.guardDate?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+        );
       }
 
       setGuards(data);
@@ -146,7 +133,8 @@ const EmergencyGuard = () => {
   };
 
   const filteredGuards = guards.filter((guard) => {
-    if (searchType === "all" && searchTerm) {
+    // Filtro local adicional para búsqueda en tiempo real si se desea
+    if (searchTerm) {
       return (
         (guard.doctorName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
         (guard.doctorIdentification?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
@@ -189,47 +177,23 @@ const EmergencyGuard = () => {
         )}
       </div>
 
-      {/* Search Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-1">
-          <select
-            value={searchType}
-            onChange={(e) => setSearchType(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-          >
-            <option value="all">Buscar en todo</option>
-            <option value="date">Por fecha</option>
-            <option value="doctorName">Por nombre del doctor</option>
-            <option value="doctorIdentification">Por CI del doctor</option>
-          </select>
-        </div>
-
-        {searchType === "date" ? (
-          <div className="md:col-span-2">
-            <CustomDatePicker
-              selected={searchDate}
-              onChange={setSearchDate}
-              dateFormat="dd/MM/yyyy"
-            />
-          </div>
-        ) : (
-          <div className="md:col-span-2 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder={
-                searchType === "doctorName" 
-                  ? "Buscar por nombre del doctor..." 
-                  : searchType === "doctorIdentification"
-                  ? "Buscar por CI del doctor..."
-                  : "Buscar guardias..."
+      {/* Search Bar - SOLO BARRA DE BÚSQUEDA Y BOTÓN */}
+      <div className="flex gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Buscar guardias por nombre, CI o fecha..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch();
               }
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            />
-          </div>
-        )}
+            }}
+            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+          />
+        </div>
 
         <button
           onClick={handleSearch}
@@ -343,7 +307,7 @@ const EmergencyGuard = () => {
           <div className="text-center py-12">
             <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 text-lg">
-              {searchTerm || searchType !== "all"
+              {searchTerm
                 ? "No se encontraron guardias con ese criterio"
                 : "No hay guardias registradas"}
             </p>

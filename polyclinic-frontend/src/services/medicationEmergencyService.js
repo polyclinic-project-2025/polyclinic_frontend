@@ -8,10 +8,9 @@ export const medicationEmergencyService = {
   getAllWithMedication: async () => {
     try {
       const response = await api.get('/MedicationEmergency');
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener medicaciones de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener medicaciones');
     }
   },
 
@@ -23,11 +22,9 @@ export const medicationEmergencyService = {
   getByIdWithMedication: async (id) => {
     try {
       const response = await api.get(`/MedicationEmergency/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
-      console.error('Error al obtener medicación de emergencia:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener medicación de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener medicacion');
     }
   },
 
@@ -39,10 +36,9 @@ export const medicationEmergencyService = {
   getByEmergencyRoomCareId: async (emergencyRoomCareId) => {
     try {
       const response = await api.get(`/MedicationEmergency/by-emergency-room-care/${emergencyRoomCareId}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener medicaciones por atención de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener medicaciones');
     }
   },
 
@@ -54,10 +50,9 @@ export const medicationEmergencyService = {
   getByMedicationId: async (medicationId) => {
     try {
       const response = await api.get(`/MedicationEmergency/by-medication/${medicationId}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener medicaciones por medicamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener medicaciones');
     }
   },
 
@@ -69,10 +64,9 @@ export const medicationEmergencyService = {
   getByMedicationName: async (medicationName) => {
     try {
       const response = await api.get(`/MedicationEmergency/by-medication-name?medicationName=${medicationName}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener medicaciones por nombre del medicamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener medicaciones');
     }
   },
 
@@ -88,12 +82,9 @@ export const medicationEmergencyService = {
   create: async (medicationEmergencyData) => {
     try {
       const response = await api.post('/MedicationEmergency', medicationEmergencyData);
-      return response.data;
+      return response;
     } catch (error) {
-      console.error('Error al crear medicación de emergencia:', error);
-      console.error('Respuesta del error:', error.response);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al crear medicación de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al crear medicacion');
     }
   },
 
@@ -111,9 +102,7 @@ export const medicationEmergencyService = {
     try {
       await api.put(`/MedicationEmergency/${id}`, medicationEmergencyData);
     } catch (error) {
-      console.error('Error al actualizar medicación de emergencia:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al actualizar medicación de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al actualizar medicacion');
     }
   },
 
@@ -126,8 +115,7 @@ export const medicationEmergencyService = {
     try {
       await api.delete(`/MedicationEmergency/${id}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al eliminar medicación de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al eliminar medicacion');
     }
   },
 };

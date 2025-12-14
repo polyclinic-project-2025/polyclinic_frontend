@@ -8,10 +8,9 @@ export const emergencyRoomCareService = {
   getAllWithDetails: async () => {
     try {
       const response = await api.get('/EmergencyRoomCare');
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener atenciones de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener atenciones');
     }
   },
 
@@ -23,11 +22,9 @@ export const emergencyRoomCareService = {
   getByIdWithDetails: async (id) => {
     try {
       const response = await api.get(`/EmergencyRoomCare/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
-      console.error('Error al obtener atención de emergencia:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener atención de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener atencion');
     }
   },
 
@@ -39,10 +36,9 @@ export const emergencyRoomCareService = {
   getByDate: async (date) => {
     try {
       const response = await api.get(`/EmergencyRoomCare/by-date?date=${date}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener atenciones por fecha';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener atenciones');
     }
   },
 
@@ -54,10 +50,9 @@ export const emergencyRoomCareService = {
   getByDoctorName: async (doctorName) => {
     try {
       const response = await api.get(`/EmergencyRoomCare/by-doctor-name?doctorName=${doctorName}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener atenciones por nombre del doctor';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener atenciones');
     }
   },
 
@@ -69,10 +64,9 @@ export const emergencyRoomCareService = {
   getByDoctorIdentification: async (doctorIdentification) => {
     try {
       const response = await api.get(`/EmergencyRoomCare/by-doctor-identification?doctorIdentification=${doctorIdentification}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener atenciones por identificación del doctor';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener atenciones');
     }
   },
 
@@ -84,10 +78,9 @@ export const emergencyRoomCareService = {
   getByPatientName: async (patientName) => {
     try {
       const response = await api.get(`/EmergencyRoomCare/by-patient-name?patientName=${patientName}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener atenciones por nombre del paciente';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener atenciones');
     }
   },
 
@@ -99,10 +92,9 @@ export const emergencyRoomCareService = {
   getByPatientIdentification: async (patientIdentification) => {
     try {
       const response = await api.get(`/EmergencyRoomCare/by-patient-identification?patientIdentification=${patientIdentification}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener atenciones por identificación del paciente';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener atenciones');
     }
   },
 
@@ -119,12 +111,9 @@ export const emergencyRoomCareService = {
   create: async (emergencyRoomCareData) => {
     try {
       const response = await api.post('/EmergencyRoomCare', emergencyRoomCareData);
-      return response.data;
+      return response;
     } catch (error) {
-      console.error('Error al crear atención de emergencia:', error);
-      console.error('Respuesta del error:', error.response);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al crear atención de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al crear atencion');
     }
   },
 
@@ -143,9 +132,7 @@ export const emergencyRoomCareService = {
     try {
       await api.put(`/EmergencyRoomCare/${id}`, emergencyRoomCareData);
     } catch (error) {
-      console.error('Error al actualizar atención de emergencia:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al actualizar atención de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al actualizar atencion');
     }
   },
 
@@ -158,8 +145,7 @@ export const emergencyRoomCareService = {
     try {
       await api.delete(`/EmergencyRoomCare/${id}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al eliminar atención de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al eliminar guardia');
     }
   },
 };

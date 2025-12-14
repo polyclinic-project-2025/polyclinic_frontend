@@ -8,10 +8,9 @@ export const emergencyRoomService = {
   getAllWithDoctor: async () => {
     try {
       const response = await api.get('/EmergencyRoom');
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener salas de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener guardias');
     }
   },
 
@@ -23,11 +22,9 @@ export const emergencyRoomService = {
   getByIdWithDoctor: async (id) => {
     try {
       const response = await api.get(`/EmergencyRoom/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
-      console.error('Error al obtener sala de emergencia:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener sala de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener guardia');
     }
   },
 
@@ -39,10 +36,9 @@ export const emergencyRoomService = {
   getByDate: async (date) => {
     try {
       const response = await api.get(`/EmergencyRoom/by-date?date=${date}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener salas por fecha';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener guardias');
     }
   },
 
@@ -54,10 +50,9 @@ export const emergencyRoomService = {
   getByDoctorIdentification: async (doctorIdentification) => {
     try {
       const response = await api.get(`/EmergencyRoom/by-doctor-identification?doctorIdentification=${doctorIdentification}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener salas por identificación del doctor';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener guardias');
     }
   },
 
@@ -69,10 +64,9 @@ export const emergencyRoomService = {
   getByDoctorName: async (doctorName) => {
     try {
       const response = await api.get(`/EmergencyRoom/by-doctor-name?doctorName=${doctorName}`);
-      return response.data;
+      return response;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener salas por nombre del doctor';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener guardias');
     }
   },
 
@@ -93,12 +87,9 @@ export const emergencyRoomService = {
       };
       
       const response = await api.post('/EmergencyRoom', formattedData);
-      return response.data;
+      return response;
     } catch (error) {
-      console.error('Error al crear sala de emergencia:', error);
-      console.error('Respuesta del error:', error.response);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al crear sala de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al crear guardia');
     }
   },
 
@@ -121,9 +112,7 @@ export const emergencyRoomService = {
       
       await api.put(`/EmergencyRoom/${id}`, formattedData);
     } catch (error) {
-      console.error('Error al actualizar sala de emergencia:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al actualizar sala de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al actualizar guardia');
     }
   },
 
@@ -136,8 +125,7 @@ export const emergencyRoomService = {
     try {
       await api.delete(`/EmergencyRoom/${id}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al eliminar sala de emergencia';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al eliminar guardia');
     }
   },
 };
