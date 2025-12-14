@@ -1,4 +1,3 @@
-// Selector.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { Search, ChevronDown, X } from "lucide-react";
 
@@ -31,13 +30,18 @@ const GenericSelector = ({
 
   // Recargar items cuando cambian los parámetros del método
   useEffect(() => {
-    if (method === "getDoctors") {
-      // Solo cargar si hay methodParams para getDoctors
-      if (methodParams) {
-        loadItems();
+    // Determinar cuándo cargar items basado en el método
+    const shouldLoad = () => {
+      if (method === "getDoctors" || method === "getAllByType") {
+        // Solo cargar si hay methodParams para estos métodos
+        return !!methodParams;
+      } else {
+        // Para otros métodos o sin método, cargar siempre
+        return true;
       }
-    } else {
-      // Para otros casos (sin method), cargar siempre
+    };
+
+    if (shouldLoad()) {
       loadItems();
     }
   }, [methodParams, method]);
@@ -114,15 +118,27 @@ const GenericSelector = ({
       setLoading(true);
 
       let data = null;
-      switch (method) {
-        case "getDoctors":
-          if (methodParams) {
-            data = await service.getDoctorsByDepartment(methodParams);
-          } 
-          break;
-        default:
-          data = await service.getAll();
-          break;
+      
+      // Manejar diferentes tipos de métodos
+      if (method === "getDoctors") {
+        // Para departmentService.getDoctors(departmentId)
+        // Mantener compatibilidad con ambos nombres de método
+        if (service.getDoctorsByDepartment) {
+          data = await service.getDoctorsByDepartment(methodParams);
+        } else if (service.getDoctors) {
+          data = await service.getDoctors(methodParams);
+        }
+      } else if (method === "getAllByType") {
+        // Para employeeService.getAllByType('doctor')
+        data = await service.getAllByType(methodParams);
+      } else if (method && service[method]) {
+        // Para otros métodos genéricos
+        data = methodParams !== undefined 
+          ? await service[method](methodParams)
+          : await service[method]();
+      } else {
+        // Método por defecto: getAll()
+        data = await service.getAll();
       }
 
       setRawItems(data || []);
