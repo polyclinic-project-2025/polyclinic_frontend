@@ -40,6 +40,13 @@ const PERMISSIONS = {
     canCreateWarehouseRequests: false,
     canApproveWarehouseRequests: false,
     canViewDepartmentStock: true,
+    canCreateEmergencyGuards: true,
+    canEditEmergencyGuards: true,
+    canDeleteEmergencyGuards: true,
+    canCreateEmergencyCare: false, 
+    canEditEmergencyCare: false,
+    canDeleteEmergencyCare: false,
+    canViewEmergency: true,
   },
   
   Doctor: {
@@ -77,6 +84,13 @@ const PERMISSIONS = {
     canCreateWarehouseRequests: true,
     canApproveWarehouseRequests: false,
     canViewDepartmentStock: true,
+    canCreateEmergencyGuards: false,
+    canEditEmergencyGuards: false,
+    canDeleteEmergencyGuards: false,
+    canCreateEmergencyCare: true, // Solo si está de guardia
+    canEditEmergencyCare: true,  // Solo sus propias atenciones
+    canDeleteEmergencyCare: true, // Solo sus propias atenciones
+    canViewEmergency: true,
   },
   
   "Enfermero/a": {
@@ -114,6 +128,10 @@ const PERMISSIONS = {
     canCreateWarehouseRequests: false,
     canApproveWarehouseRequests: false,
     canViewDepartmentStock: true,
+    canCreateEmergencyCare: false,
+    canEditEmergencyCare: false,
+    canDeleteEmergencyCare: false,
+    canViewEmergency: true,
   },
   
   "Jefe de Almacén": {
@@ -151,6 +169,10 @@ const PERMISSIONS = {
     canCreateWarehouseRequests: false,
     canApproveWarehouseRequests: true,
     canViewDepartmentStock: true,
+    canCreateEmergencyCare: false,
+    canEditEmergencyCare: false,
+    canDeleteEmergencyCare: false,
+    canViewEmergency: false,
   },
   
   Paciente: {
@@ -188,6 +210,7 @@ const PERMISSIONS = {
     canCreateWarehouseRequests: false,
     canApproveWarehouseRequests: false,
     canViewDepartmentStock: false,
+    canViewEmergency: false,
   },
 
   "Jefe de Departamento": {
@@ -221,6 +244,10 @@ const PERMISSIONS = {
     canCreateWarehouseRequests: true,
     canApproveWarehouseRequests: true,
     canViewDepartmentStock: true,
+    canCreateEmergencyCare: true, // Solo si está de guardia
+    canEditEmergencyCare: true,
+    canDeleteEmergencyCare: true,
+    canViewEmergency: true,
   },
 };
 
