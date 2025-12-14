@@ -20,7 +20,13 @@ import Medications from "./Medications";
 import Patients from "./Patients";
 import RecentConsultationsWidget from "../components/RecentConsultationsWidget";
 import analyticsService from "../services/analyticsService";
-import Reportes from "./Reportes";
+import ReporteFuncion1 from "./reports/ReporteFuncion1";
+import ReporteFuncion2 from "./reports/ReporteFuncion2";
+import ReporteDateRange from "./reports/ReporteDateRange";
+import ReporteLast10 from "./reports/ReporteLast10";
+import ReporteFuncion5 from "./reports/ReporteFuncion5";
+import ReporteFuncion6 from "./reports/ReporteFuncion6";
+import ReporteFuncion7 from "./reports/ReporteFuncion7";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -65,16 +71,13 @@ const Dashboard = () => {
       try {
         setLoadingWarehouseManager(true);
         
-        // Obtener el jefe de almacén actual
         const manager = await warehouseManagerService.getCurrent();
         setCurrentWarehouseManager(manager);
 
-        // Si el usuario tiene rol de Jefe de Almacén, verificar si es el actual
         if (user?.roles?.includes('Jefe de Almacén')) {
           const profile = await userService.getProfile(user.id);
           const userEmployeeId = profile.profile?.employeeId;
           
-          // Comparar si el employeeId del usuario coincide con el del jefe actual
           setIsCurrentWarehouseManager(userEmployeeId === manager?.employeeId);
         } else {
           setIsCurrentWarehouseManager(false);
@@ -182,16 +185,26 @@ const Dashboard = () => {
         { id: "nurse", name: "Enfermeros" }
       ]
     },
+    {
+      id: "reports",
+      modes: [
+        { id: "funcion1", name: "Función 1" },
+        { id: "funcion2", name: "Función 2" },
+        { id: "daterange", name: "Consultas por Rango de Fechas" },
+        { id: "last10", name: "Últimas 10 Consultas" },
+        { id: "funcion5", name: "Función 5" },
+        { id: "funcion6", name: "Función 6" },
+        { id: "funcion7", name: "Función 7" }
+      ]
+    }
   ];
 
   const handleItemClick = (itemId) => {
     const hasSubmenu = menuItems.find(item => item.id === itemId);
     
     if (hasSubmenu) {
-      // Si tiene submenú, solo abre/cierra el submenú sin cambiar el módulo activo
       setActiveItem(activeItem === itemId ? null : itemId);
     } else {
-      // Si no tiene submenú, cambia el módulo normalmente
       setActiveModule(itemId);
       setSelectedMode(null);
       setActiveItem(null);
@@ -226,9 +239,8 @@ const Dashboard = () => {
     };
   }, [activeItem]);
 
-  // Filtrar módulos: excluir almacén para jefes de almacén que no sean actuales
+  // Filtrar módulos
   const modules = filterModulesByPermission(allModules, user?.roles || []).filter(module => {
-    // Si es el módulo de almacén y el usuario es jefe de almacén pero NO es el actual, lo excluimos
     if (module.id === 'warehouse' && user?.roles?.includes('Jefe de Almacén') && !isCurrentWarehouseManager) {
       return false;
     }
@@ -260,6 +272,34 @@ const Dashboard = () => {
 
       if (selectedMode.itemId === 'staff' && (mode.id === 'doctor' || mode.id === 'nurse')) {
         return <Employees type={mode.id} />;
+      }
+
+      if (selectedMode.itemId === 'reports') {
+        switch (mode.id) {
+          case "funcion1":
+            return <ReporteFuncion1 />;
+          case "funcion2":
+            return <ReporteFuncion2 />;
+          case "daterange":
+            return <ReporteDateRange />;
+          case "last10":
+            return <ReporteLast10 />;
+          case "funcion5":
+            return <ReporteFuncion5 />;
+          case "funcion6":
+            return <ReporteFuncion6 />;
+          case "funcion7":
+            return <ReporteFuncion7 />;
+          default:
+            return (
+              <div className="text-center py-12">
+                <BarChart3 className="w-16 h-16 text-cyan-600 mx-auto mb-4" />
+                <p className="text-gray-700 text-lg font-semibold">
+                  Reporte no encontrado
+                </p>
+              </div>
+            );
+        }
       }
 
       switch (mode.id) {
@@ -328,9 +368,16 @@ const Dashboard = () => {
       case "warehouse":
         return <Warehouse />;
       case "reports":
-        return (
-          <Reportes />
-        );
+        if (!selectedMode || selectedMode.itemId !== "reports") {
+          return (
+            <div className="text-center py-12">
+              <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">Selecciona un tipo de reporte</p>
+              <p className="text-gray-400 text-sm mt-2">Usa el menú lateral para elegir el reporte que deseas ver</p>
+            </div>
+          );
+        }
+        break;
       default:
         return (
           <>
@@ -365,9 +412,9 @@ const Dashboard = () => {
       <aside
         className={`fixed left-0 top-0 h-full ${
           sidebarOpen ? "w-72" : "w-20"
-        } bg-white/80 backdrop-blur-xl border-r border-slate-200/50 transition-all duration-300 z-30 shadow-xl`}
+        } bg-white/80 backdrop-blur-xl border-r border-slate-200/50 transition-all duration-300 z-30 shadow-xl flex flex-col`}
       >
-        <div className="p-6 border-b border-slate-200/50">
+        <div className="p-6 border-b border-slate-200/50 flex-shrink-0">
           <div className="flex items-center justify-between">
             {sidebarOpen && (
               <div>
@@ -391,7 +438,12 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <nav className="p-4 space-y-1 sidebar-nav">
+        <nav className="p-4 space-y-1 sidebar-nav flex-1 overflow-y-auto"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#cbd5e1 transparent'
+          }}
+        >
           {modules.map((module) => {
             const Icon = module.icon;
             const isActive = activeModule === module.id;
@@ -422,7 +474,7 @@ const Dashboard = () => {
                   )}
                 </button>
 
-                {/* Submenú inline para todos los módulos con submenú */}
+                {/* Submenú inline */}
                 {sidebarOpen && hasSubmenu && isSubmenuOpen && (
                   <div
                     className="mt-2 pl-10 pr-4 space-y-1"
@@ -449,6 +501,26 @@ const Dashboard = () => {
             );
           })}
         </nav>
+        
+        {/* Estilos CSS para scrollbar personalizado */}
+        <style jsx>{`
+          .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+          }
+          
+          .sidebar-nav::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          
+          .sidebar-nav::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+          }
+          
+          .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+          }
+        `}</style>
       </aside>
 
       {/* Main Content */}
