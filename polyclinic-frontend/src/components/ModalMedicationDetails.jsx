@@ -64,7 +64,7 @@ const ModalMedicationDetails = ({ show, onClose, medication }) => {
               <div>
                 <p className="text-sm text-gray-600">Fecha de Vencimiento</p>
                 <p className="text-base font-medium text-gray-900">
-                  {new Date(medication.expirationDate).toLocaleDateString('es-ES')}
+                  {formatDateShort(medication.expirationDate)}
                 </p>
               </div>
             </div>

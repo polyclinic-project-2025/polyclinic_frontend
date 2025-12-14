@@ -5,6 +5,13 @@ import { employeeService } from "../services/employeeService";
 import Selector from "./Selector";
 import CustomDatePicker from "./CustmonDatePicker";
 import { useAuth } from "../context/AuthContext";
+import { 
+  formatDateForBackend, 
+  parseDateFromBackend,
+  getTodayDate,
+  isDateBeforeToday,
+  formatDateForDisplay
+} from "../utils/dateUtils";
 
 const ModalEmergencyGuard = ({ isOpen, onClose, modalMode, selected, onSuccess }) => {
   const { user } = useAuth();
@@ -22,40 +29,11 @@ const ModalEmergencyGuard = ({ isOpen, onClose, modalMode, selected, onSuccess }
     guardDate: false
   });
 
-  // Función para obtener la fecha de hoy sin hora (solo fecha)
-  const getTodayDate = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  };
-
-  // Función para comparar fechas ignorando la hora
-  const isDateBeforeToday = (date) => {
-    if (!date) return false;
-    
-    const compareDate = new Date(date);
-    compareDate.setHours(0, 0, 0, 0);
-    const today = getTodayDate();
-    
-    return compareDate < today;
-  };
-
-  // Función para formatear fecha para mostrar
-  const formatDateForDisplay = (date) => {
-    if (!date) return "";
-    return date.toLocaleDateString("es-ES", {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
   useEffect(() => {
     console.log("Selected guard data:", selected);
     
     if (isOpen && modalMode === "edit" && selected) {
-      const dateForPicker = new Date(selected.guardDate + 'T00:00:00');
+      const dateForPicker = parseDateFromBackend(selected.guardDate);
       
       // Cargar datos completos del doctor para el selector
       const loadDoctorData = async () => {
@@ -98,12 +76,9 @@ const ModalEmergencyGuard = ({ isOpen, onClose, modalMode, selected, onSuccess }
       loadDoctorData();
     } else if (isOpen && modalMode === "create") {
       // En modo creación, establecer fecha inicial como hoy
-      const today = new Date();
-      today.setHours(12, 0, 0, 0); // Establecer al mediodía para evitar problemas de zona horaria
-      
       setFormData({
         doctorId: "",
-        guardDate: today,
+        guardDate: getTodayDate(),
         doctor: null,
       });
       // Limpiar errores al abrir en modo creación
@@ -193,7 +168,7 @@ const ModalEmergencyGuard = ({ isOpen, onClose, modalMode, selected, onSuccess }
 
       const dataToSend = {
         doctorId: selectedDoctorId,  // ← Esto debe ser el employeeId del doctor
-        guardDate: formData.guardDate.toISOString().split('T')[0],
+        guardDate: formatDateForBackend(formData.guardDate),
       };
 
       console.log("Enviando datos guardia al backend:", dataToSend);

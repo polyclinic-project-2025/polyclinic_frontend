@@ -16,6 +16,7 @@ import { userService } from '../services/userService';
 import { useAuth } from '../context/AuthContext';
 import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
 import Pagination from '../components/Pagination';
+import { formatDateShort } from '../utils/dateUtils';
 
 const Warehouse = () => {
   const { user } = useAuth();
@@ -698,7 +699,7 @@ const Warehouse = () => {
                       Solicitud #{request.warehouseRequestId.slice(0, 8)}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      {new Date(request.requestDate).toLocaleDateString('es-ES')}
+                      {formatDateShort(request.requestDate)}
                     </p>
                   </div>
                 </div>
@@ -953,7 +954,7 @@ const Warehouse = () => {
                 <div>
                   <p className="text-sm text-gray-500">Fecha</p>
                   <p className="font-medium text-gray-900">
-                    {new Date(selectedRequest.requestDate).toLocaleDateString('es-ES')}
+                    {formatDateShort(selectedRequest.requestDate)}
                   </p>
                 </div>
                 <div className="col-span-2">

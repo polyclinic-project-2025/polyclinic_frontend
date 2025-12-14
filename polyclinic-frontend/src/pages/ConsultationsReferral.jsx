@@ -26,6 +26,7 @@ import {
 import ModalConsultation from "../components/ModalConsultation";
 import ModalMedicationReferral from "../components/ModalMedicationReferral";
 import Pagination from "../components/Pagination";
+import { formatDateMedium } from "../utils/dateUtils";
 
 import medicationReferralService from "../services/medicationReferralService";
 import medicationService from "../services/medicationService";
@@ -365,15 +366,7 @@ const Consultations = () => {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
                     <span>
-                      {new Date(consultation.dateTimeCRem).toLocaleDateString(
-                        "es-ES",
-                        {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          timeZone: "UTC",
-                        }
-                      )}
+                      {formatDateMedium(consultation.dateTimeCRem)}
                     </span>
                   </div>
                 )}

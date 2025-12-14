@@ -6,6 +6,14 @@ import { patientService } from "../services/patientService";
 import Selector from "./Selector";
 import CustomDatePicker from "./CustmonDatePicker";
 import { useAuth } from "../context/AuthContext";
+import {
+  getTodayDate,
+  formatDateForDisplay,
+  formatDateTimeForDisplay,
+  formatTimeOnly,
+  isDateDifferentFromToday,
+  formatDateShort
+} from "../utils/dateUtils";
 
 const ModalEmergencyCare = ({ 
   isOpen, 
@@ -34,48 +42,6 @@ const ModalEmergencyCare = ({
     diagnosis: false,
     patient: false
   });
-
-  // Función para obtener la fecha de hoy sin hora
-  const getTodayDate = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  };
-
-  // Función para comparar fechas ignorando la hora
-  const isDateDifferentFromToday = (date) => {
-    if (!date) return true;
-    
-    const compareDate = new Date(date);
-    compareDate.setHours(0, 0, 0, 0);
-    const today = getTodayDate();
-    
-    return compareDate.getTime() !== today.getTime();
-  };
-
-  // Función para formatear fecha para mostrar
-  const formatDateForDisplay = (date) => {
-    if (!date) return "";
-    return date.toLocaleDateString("es-ES", {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  // Función para formatear fecha y hora para mostrar
-  const formatDateTimeForDisplay = (date) => {
-    if (!date) return "";
-    return date.toLocaleString("es-ES", {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   // Cargar la guardia del usuario
   const loadUserEmergencyRoom = useCallback(async () => {
@@ -401,11 +367,7 @@ const ModalEmergencyCare = ({
                     </p>
                     <p className="text-xs text-gray-500 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      Hora: {formData.careDate.toLocaleTimeString("es-ES", {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                      })}
+                      Hora: {formatTimeOnly(formData.careDate)}
                     </p>
                     {isDateDifferentFromToday(formData.careDate) && (
                       <p className="text-xs text-red-600 font-medium">
@@ -533,7 +495,7 @@ const ModalEmergencyCare = ({
                             modalMode === "create" ? "text-green-600" : "text-blue-600"
                           }`}>Fecha:</p>
                           <p className="font-medium text-gray-900">
-                            {new Date(userEmergencyRoom.guardDate).toLocaleDateString("es-ES")}
+                            {formatDateShort(userEmergencyRoom.guardDate)}
                           </p>
                         </div>
                         <div>

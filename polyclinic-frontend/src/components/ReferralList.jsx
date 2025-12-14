@@ -120,11 +120,7 @@ const ReferralList = ({
                   <Calendar className="w-4 h-4" />
                   <span>
                     {referral.dateTimeRem ? 
-                      new Date(referral.dateTimeRem).toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      }) : 'Fecha no disponible'
+                      {formatDateMedium(referral.dateTimeRem)} : 'Fecha no disponible'
                     }
                   </span>
                 </div>

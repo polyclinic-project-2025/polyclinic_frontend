@@ -92,7 +92,7 @@ const EmergencyGuard = () => {
       return;
     }
 
-    if (!window.confirm(`¿Estás seguro de eliminar la guardia del Dr. ${guard.doctorName} del ${new Date(guard.guardDate).toLocaleDateString()}?`)) {
+    if (!window.confirm(`¿Estás seguro de eliminar la guardia del Dr. ${guard.doctorName} del ${formatDateShort(guard.guardDate)}?`)) {
       return;
     }
 
@@ -267,11 +267,7 @@ const EmergencyGuard = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-gray-400" />
                       <p className="text-sm text-gray-900">
-                        {new Date(guard.guardDate).toLocaleDateString("es-ES", {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                        })}
+                        {formatDateMedium(guard.guardDate)}
                       </p>
                     </div>
                   </td>

@@ -365,15 +365,7 @@ const ConsultationsDerivation = () => {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
                     <span>
-                      {new Date(consultation.dateTimeCDer).toLocaleDateString(
-                        "es-ES",
-                        {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          timeZone: "UTC",
-                        }
-                      )}
+                      {formatDateMedium(consultation.dateTimeCDer)}
                     </span>
                   </div>
                 )} 

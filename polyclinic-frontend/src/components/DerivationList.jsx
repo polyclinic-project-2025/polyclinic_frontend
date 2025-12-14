@@ -118,11 +118,7 @@ const DerivationList = ({
                   <Calendar className="w-4 h-4" />
                   <span>
                     {derivation.dateTimeDer ? 
-                      new Date(derivation.dateTimeDer).toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      }) : 'Fecha no disponible'
+                      {formatDateMedium(derivation.dateTimeDer)} : 'Fecha no disponible'
                     }
                   </span>
                 </div>

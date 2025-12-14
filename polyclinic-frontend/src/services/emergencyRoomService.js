@@ -80,13 +80,8 @@ export const emergencyRoomService = {
    */
   create: async (emergencyRoomData) => {
     try {
-      // Convertir fecha a formato DateOnly si es necesario
-      const formattedData = {
-        ...emergencyRoomData,
-        guardDate: emergencyRoomData.guardDate.split('T')[0] // Asegurar formato YYYY-MM-DD
-      };
-      
-      const response = await api.post('/EmergencyRoom', formattedData);
+      // La fecha ya viene en formato YYYY-MM-DD desde el componente
+      const response = await api.post('/EmergencyRoom', emergencyRoomData);
       return response;
     } catch (error) {
       throw new Error(error.message || 'Error al crear guardia');
@@ -104,13 +99,8 @@ export const emergencyRoomService = {
    */
   update: async (id, emergencyRoomData) => {
     try {
-      // Convertir fecha a formato DateOnly si es necesario
-      const formattedData = { ...emergencyRoomData };
-      if (formattedData.guardDate) {
-        formattedData.guardDate = formattedData.guardDate.split('T')[0];
-      }
-      
-      await api.put(`/EmergencyRoom/${id}`, formattedData);
+      // La fecha ya viene en formato YYYY-MM-DD desde el componente
+      await api.put(`/EmergencyRoom/${id}`, emergencyRoomData);
     } catch (error) {
       throw new Error(error.message || 'Error al actualizar guardia');
     }

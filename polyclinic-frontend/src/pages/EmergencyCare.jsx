@@ -25,6 +25,7 @@ import ModalMedicationEmergency from "../components/ModalMedicationEmergency";
 import { medicationEmergencyService } from "../services/medicationEmergencyService";
 import { useAuth } from "../context/AuthContext";
 import { userService } from "../services/userService";
+import { formatDateForBackend, formatDateTimeMedium } from "../utils/dateUtils";
 
 const EmergencyCare = () => {
   const { can } = usePermissions();
@@ -94,7 +95,7 @@ const EmergencyCare = () => {
   const tryAlternativeMethod = async () => {
     try {
       console.log("Intentando método alternativo...");
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatDateForBackend(new Date());
       const guards = await emergencyRoomService.getByDate(today);
       
       const userGuard = guards.find(guard => 
@@ -127,7 +128,7 @@ const EmergencyCare = () => {
     }
     
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatDateForBackend(new Date());
       const guards = await emergencyRoomService.getByDate(today);
       
       console.log("Guardias de hoy:", guards);
@@ -634,13 +635,7 @@ const EmergencyCare = () => {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
                     <span>
-                      {new Date(care.careDate).toLocaleDateString("es-ES", {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatDateTimeMedium(care.careDate)}
                     </span>
                   </div>
                 )}

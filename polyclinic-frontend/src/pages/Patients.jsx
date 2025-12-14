@@ -982,11 +982,7 @@ const Patients = () => {
                     <Calendar className="w-4 h-4" />
                     <span>
                       {derivation.dateTimeDer ? 
-                        new Date(derivation.dateTimeDer).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        }) : 'Fecha no disponible'
+                        {formatDateMedium(derivation.dateTimeDer)} : 'Fecha no disponible'
                       }
                     </span>
                   </div>
@@ -1072,11 +1068,7 @@ const Patients = () => {
                     <Calendar className="w-4 h-4" />
                     <span>
                       {referral.dateTimeRem ? 
-                        new Date(referral.dateTimeRem).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        }) : 'Fecha no disponible'
+                        {formatDateMedium(referral.dateTimeRem)} : 'Fecha no disponible'
                       }
                     </span>
                   </div>

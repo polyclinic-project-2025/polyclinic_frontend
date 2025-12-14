@@ -1,6 +1,7 @@
 // components/ConsultationsDateRangeFilter.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { Filter, Calendar, Search, Loader2, AlertCircle, Stethoscope, FileText, X, User, ChevronDown, Building2 } from "lucide-react";
+import { formatDateMedium } from "../utils/dateUtils";
 
 const ConsultationsDateRangeFilter = ({ service }) => {
   // Estados del paciente
