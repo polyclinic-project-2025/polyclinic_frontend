@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
 import PatientCIValidator from '../components/PatientCIValidator';
 import Pagination from '../components/Pagination';
+import { formatDateMedium } from '../utils/dateUtils';
 
 const Patients = () => {
   const { hasRole } = useAuth();
