@@ -81,7 +81,16 @@ const analyticsService = {
       throw error;
     }
   },
-
+  // Obtener lista de pacientes registrados
+  getPatientsList: async () => {
+    try {
+      const response = await api.get('/Analytics/patients-list');
+      return response;
+    } catch (error) {
+      console.error('Error al obtener lista de pacientes:', error);
+      throw error;
+    }
+  },
   // Obtener tasa de éxito de doctores
   getDoctorSuccessRate: async (params) => {
     try {

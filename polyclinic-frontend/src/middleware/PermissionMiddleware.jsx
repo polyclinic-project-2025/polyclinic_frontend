@@ -87,9 +87,9 @@ const PERMISSIONS = {
     canCreateEmergencyGuards: false,
     canEditEmergencyGuards: false,
     canDeleteEmergencyGuards: false,
-    canCreateEmergencyCare: true, // Solo si está de guardia
-    canEditEmergencyCare: true,  // Solo sus propias atenciones
-    canDeleteEmergencyCare: true, // Solo sus propias atenciones
+    canCreateEmergencyCare: true, 
+    canEditEmergencyCare: true,  
+    canDeleteEmergencyCare: true, 
     canViewEmergency: true,
   },
   

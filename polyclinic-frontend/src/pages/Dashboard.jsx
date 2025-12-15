@@ -27,7 +27,7 @@ import ConsultationsDerivation from "./ConsultationsDerivation";
 import Employees from "./Employees";
 import Medications from "./Medications";
 import Patients from "./Patients";
-import ReporteFuncion1 from "./reports/ReporteFuncion1";
+import ReportPatientsList from "./reports/ReportPatientsList";
 import ReportDoctorMonthlyAverage from "./reports/ReportDoctorMonthlyAverage";
 import ReporteDateRange from "./reports/ReporteDateRange";
 import ReporteLast10 from "./reports/ReporteLast10";
@@ -376,7 +376,7 @@ const Dashboard = () => {
     {
       id: "reports",
       modes: [
-        { id: "funcion1", name: "Función 1" },
+        { id: "patients-list", name: "Listado de Pacientes" },
         { id: "doctor-monthly-average", name: "Rendimiento mensual de doctores" },
         { id: "daterange", name: "Consultas por Rango de Fechas" },
         { id: "last10", name: "Últimas 10 Consultas" },
@@ -471,8 +471,8 @@ const Dashboard = () => {
 
       if (selectedMode.itemId === 'reports') {
         switch (mode.id) {
-          case "funcion1":
-            return <ReporteFuncion1 />;
+          case "patients-list":
+            return <ReportPatientsList />;
           case "doctor-monthly-average":
             return <ReportDoctorMonthlyAverage />;
           case "daterange":
