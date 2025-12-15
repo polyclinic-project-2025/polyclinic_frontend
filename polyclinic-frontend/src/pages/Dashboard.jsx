@@ -19,12 +19,12 @@ import Employees from "./Employees";
 import Medications from "./Medications";
 import Patients from "./Patients";
 import ReporteFuncion1 from "./reports/ReporteFuncion1";
-import ReporteFuncion2 from "./reports/ReporteFuncion2";
+import ReportDoctorMonthlyAverage from "./reports/ReportDoctorMonthlyAverage";
 import ReporteDateRange from "./reports/ReporteDateRange";
 import ReporteLast10 from "./reports/ReporteLast10";
 import ReporteFuncion5 from "./reports/ReporteFuncion5";
-import ReporteFuncion6 from "./reports/ReporteFuncion6";
-import ReporteFuncion7 from "./reports/ReporteFuncion7";
+import ReportWarehouseRequestsDenied from "./reports/ReportWarehouseRequestsDenied";
+import ReportDoctorSuccessRate from "./reports/ReportDoctorSuccessRate";
 import EmergencyGuard from "./EmergencyGuard";
 import EmergencyCare from "./EmergencyCare";
 
@@ -189,12 +189,12 @@ const Dashboard = () => {
       id: "reports",
       modes: [
         { id: "funcion1", name: "Función 1" },
-        { id: "funcion2", name: "Función 2" },
+        { id: "doctor-monthly-average", name: "Rendimiento mensual de doctores" },
         { id: "daterange", name: "Consultas por Rango de Fechas" },
         { id: "last10", name: "Últimas 10 Consultas" },
         { id: "funcion5", name: "Consumo Acumulado de Medicamentos" },
-        { id: "funcion6", name: "Función 6" },
-        { id: "funcion7", name: "Función 7" }
+        { id: "warehouse-requests-denied", name: "Solicitudes de almacén denegadas" },
+        { id: "doctor-success-rate", name: "Tasa de éxito de prescripciones" }
       ]
     },
     {
@@ -285,18 +285,18 @@ const Dashboard = () => {
         switch (mode.id) {
           case "funcion1":
             return <ReporteFuncion1 />;
-          case "funcion2":
-            return <ReporteFuncion2 />;
+          case "doctor-monthly-average":
+            return <ReportDoctorMonthlyAverage />;
           case "daterange":
             return <ReporteDateRange />;
           case "last10":
             return <ReporteLast10 />;
           case "funcion5":
             return <ReporteFuncion5 />;
-          case "funcion6":
-            return <ReporteFuncion6 />;
-          case "funcion7":
-            return <ReporteFuncion7 />;
+          case "warehouse-requests-denied":
+            return <ReportWarehouseRequestsDenied />;
+          case "doctor-success-rate":
+            return <ReportDoctorSuccessRate />;
           default:
             return (
               <div className="text-center py-12">
