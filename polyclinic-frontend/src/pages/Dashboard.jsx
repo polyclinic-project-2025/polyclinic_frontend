@@ -9,6 +9,15 @@ import { useAuth } from "../context/AuthContext";
 import { usePermissions, filterModulesByPermission } from "../middleware/PermissionMiddleware";
 import { warehouseManagerService } from "../services/warehouseManagerService";
 import { userService } from "../services/userService";
+import { patientService } from "../services/patientService";
+import { departmentService } from "../services/departmentService";
+import medicationService from "../services/medicationService";
+import { employeeService } from "../services/employeeService";
+import { consultationReferralService } from "../services/consultationReferralService";
+import { consultationDerivationService } from "../services/consultationDerivationService";
+import { emergencyRoomCareService } from "../services/emergencyRoomCareService";
+import analyticsService from "../services/analyticsService";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import Departments from "./Departments";
 import Warehouse from "./Warehouse";
 import UsersView from "./UsersView";
@@ -43,6 +52,29 @@ const Dashboard = () => {
   const [isCurrentWarehouseManager, setIsCurrentWarehouseManager] = useState(false);
   const [loadingWarehouseManager, setLoadingWarehouseManager] = useState(true);
 
+  // Estados para las estadísticas del dashboard
+  const [dashboardStats, setDashboardStats] = useState({
+    patients: 0,
+    departments: 0,
+    medications: 0,
+    doctors: 0,
+    nurses: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  // Estados para estadísticas de hoy
+  const [todayStats, setTodayStats] = useState({
+    consultationsReferral: 0,
+    consultationsDerivation: 0,
+    emergencies: 0
+  });
+  const [loadingTodayStats, setLoadingTodayStats] = useState(true);
+
+  // Estados para gráficos
+  const [consultationsByDept, setConsultationsByDept] = useState([]);
+  const [attendanceTrend, setAttendanceTrend] = useState([]);
+  const [loadingCharts, setLoadingCharts] = useState(true);
+
   // Detectar navegación desde ModalSettings
   useEffect(() => {
     if (location.pathname === '/users') {
@@ -64,6 +96,182 @@ const Dashboard = () => {
       setActiveItem(null);
     }
   }, [location.pathname, location.search]);
+
+  // Cargar estadísticas del dashboard
+  useEffect(() => {
+    const loadDashboardStats = async () => {
+      try {
+        setLoadingStats(true);
+        const [patients, departments, medications, doctors, nurses] = await Promise.all([
+          patientService.getAll().catch(() => []),
+          departmentService.getAll().catch(() => []),
+          medicationService.getAll().catch(() => []),
+          employeeService.getAllByType('doctor').catch(() => []),
+          employeeService.getAllByType('nurse').catch(() => [])
+        ]);
+
+        setDashboardStats({
+          patients: Array.isArray(patients) ? patients.length : 0,
+          departments: Array.isArray(departments) ? departments.length : 0,
+          medications: Array.isArray(medications) ? medications.length : 0,
+          doctors: Array.isArray(doctors) ? doctors.length : 0,
+          nurses: Array.isArray(nurses) ? nurses.length : 0
+        });
+      } catch (error) {
+        console.error('Error cargando estadísticas del dashboard:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    loadDashboardStats();
+  }, []);
+
+  // Cargar estadísticas de hoy
+  useEffect(() => {
+    const loadTodayStats = async () => {
+      try {
+        setLoadingTodayStats(true);
+        const today = new Date();
+        const todayISO = today.toISOString().split('T')[0]; // "2025-12-14"
+        const todayDMY = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`; // "14/12/2025"
+        
+        const [allReferrals, allDerivations, emergenciesToday] = await Promise.all([
+          consultationReferralService.getAll().catch(() => []),
+          consultationDerivationService.getAll().catch(() => []),
+          emergencyRoomCareService.getByDate(todayISO).catch(() => [])
+        ]);
+
+        console.log('Today ISO:', todayISO);
+        console.log('Today DMY:', todayDMY);
+        console.log('All Referrals:', allReferrals);
+
+        // Verificar campos de fecha en los datos
+        if (Array.isArray(allReferrals) && allReferrals.length > 0) {
+          console.log('Ejemplo referral completo:', allReferrals[0]);
+          console.log('Campo dateTimeCRem:', allReferrals[0].dateTimeCRem);
+        }
+
+        // Función para verificar si una fecha coincide con hoy
+        const isToday = (dateStr) => {
+          if (!dateStr) return false;
+          try {
+            const dateObj = new Date(dateStr);
+            const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+            return dateObj >= todayStart && dateObj < todayEnd;
+          } catch {
+            return false;
+          }
+        };
+
+        // Filtrar consultas de hoy
+        const referralsToday = Array.isArray(allReferrals) 
+          ? allReferrals.filter(c => isToday(c.dateTimeCRem)).length 
+          : 0;
+        const derivationsToday = Array.isArray(allDerivations) 
+          ? allDerivations.filter(c => isToday(c.dateTimeCDer)).length 
+          : 0;
+
+        setTodayStats({
+          consultationsReferral: referralsToday,
+          consultationsDerivation: derivationsToday,
+          emergencies: Array.isArray(emergenciesToday) ? emergenciesToday.length : 0
+        });
+      } catch (error) {
+        console.error('Error cargando estadísticas de hoy:', error);
+      } finally {
+        setLoadingTodayStats(false);
+      }
+    };
+
+    loadTodayStats();
+  }, []);
+
+  // Cargar datos para gráficos
+  useEffect(() => {
+    const loadChartData = async () => {
+      try {
+        setLoadingCharts(true);
+        
+        const [allReferrals, allDerivations] = await Promise.all([
+          consultationReferralService.getAll().catch(() => []),
+          consultationDerivationService.getAll().catch(() => [])
+        ]);
+
+        console.log('Referrals cargados:', allReferrals);
+        console.log('Derivations cargados:', allDerivations);
+
+        // Procesar consultas por departamento usando departmentName y departmentToName
+        const deptMap = {};
+        
+        if (Array.isArray(allReferrals)) {
+          allReferrals.forEach(c => {
+            const deptName = c.departmentName;
+            if (deptName) {
+              if (!deptMap[deptName]) {
+                deptMap[deptName] = { name: deptName, referrals: 0, derivations: 0 };
+              }
+              deptMap[deptName].referrals++;
+            }
+          });
+        }
+
+        if (Array.isArray(allDerivations)) {
+          allDerivations.forEach(c => {
+            const deptName = c.departmentToName;
+            if (deptName) {
+              if (!deptMap[deptName]) {
+                deptMap[deptName] = { name: deptName, referrals: 0, derivations: 0 };
+              }
+              deptMap[deptName].derivations++;
+            }
+          });
+        }
+
+        const chartData = Object.values(deptMap)
+          .map(d => ({ name: d.name, remisiones: d.referrals, derivaciones: d.derivations }))
+          .filter(d => d.remisiones > 0 || d.derivaciones > 0)
+          .sort((a, b) => (b.remisiones + b.derivaciones) - (a.remisiones + a.derivaciones))
+          .slice(0, 6);
+        
+        console.log('Chart data por departamento:', chartData);
+        setConsultationsByDept(chartData);
+
+        // Procesar tendencia de atenciones (últimos 7 días) usando dateTimeCRem y dateTimeCDer
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+          const dayName = date.toLocaleDateString('es-ES', { weekday: 'short' });
+          
+          const referralsCount = Array.isArray(allReferrals) 
+            ? allReferrals.filter(c => c.dateTimeCRem?.startsWith(dateStr)).length 
+            : 0;
+          const derivationsCount = Array.isArray(allDerivations) 
+            ? allDerivations.filter(c => c.dateTimeCDer?.startsWith(dateStr)).length 
+            : 0;
+          
+          last7Days.push({
+            dia: dayName.charAt(0).toUpperCase() + dayName.slice(1),
+            remisiones: referralsCount,
+            derivaciones: derivationsCount,
+            total: referralsCount + derivationsCount
+          });
+        }
+        console.log('Tendencia últimos 7 días:', last7Days);
+        setAttendanceTrend(last7Days);
+
+      } catch (error) {
+        console.error('Error cargando datos de gráficos:', error);
+      } finally {
+        setLoadingCharts(false);
+      }
+    };
+
+    loadChartData();
+  }, []);
 
   // Verificar si el usuario es el jefe de almacén actual
   useEffect(() => {
@@ -420,6 +628,213 @@ const Dashboard = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Pacientes */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Pacientes Registrados</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.patients}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center">
+                    <Users size={24} className="text-cyan-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Departamentos */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Departamentos Disponibles</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.departments}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Building2 size={24} className="text-purple-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Medicamentos */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Medicamentos Accesibles</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.medications}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <Pill size={24} className="text-green-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Doctores */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Doctores Activos</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.doctors}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Stethoscope size={24} className="text-blue-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Enfermeros */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Enfermeros Activos</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.nurses}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center">
+                    <Activity size={24} className="text-pink-600" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tarjetas de Hoy */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              {/* Consultas por Remisión Hoy */}
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-xl shadow-md text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-100 font-medium">Consultas por Remisión Hoy</p>
+                    <p className="text-3xl font-bold mt-1">
+                      {loadingTodayStats ? "..." : todayStats.consultationsReferral}
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Calendar size={28} className="text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Consultas por Derivación Hoy */}
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-5 rounded-xl shadow-md text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-indigo-100 font-medium">Consultas por Derivación Hoy</p>
+                    <p className="text-3xl font-bold mt-1">
+                      {loadingTodayStats ? "..." : todayStats.consultationsDerivation}
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Calendar size={28} className="text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Emergencias Hoy */}
+              <div className="bg-gradient-to-br from-red-500 to-red-600 p-5 rounded-xl shadow-md text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-red-100 font-medium">Atenciones de Emergencia Hoy</p>
+                    <p className="text-3xl font-bold mt-1">
+                      {loadingTodayStats ? "..." : todayStats.emergencies}
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <AlertCircle size={28} className="text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              {/* Gráfico de Consultas por Departamento */}
+              <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">Consultas por Departamento</h3>
+                {loadingCharts ? (
+                  <div className="h-64 flex items-center justify-center text-slate-400">Cargando...</div>
+                ) : consultationsByDept.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={consultationsByDept} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={-15} textAnchor="end" height={60} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                      />
+                      <Legend />
+                      <Bar dataKey="remisiones" name="Remisiones" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="derivaciones" name="Derivaciones" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-slate-400">
+                    No hay datos de consultas disponibles
+                  </div>
+                )}
+              </div>
+
+              {/* Gráfico de Tendencia de Atenciones */}
+              <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">Tendencia de Atenciones (Últimos 7 días)</h3>
+                {loadingCharts ? (
+                  <div className="h-64 flex items-center justify-center text-slate-400">Cargando...</div>
+                ) : attendanceTrend.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={attendanceTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="remisiones" 
+                        name="Remisiones"
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        dot={{ fill: '#3b82f6', r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="derivaciones" 
+                        name="Derivaciones"
+                        stroke="#8b5cf6" 
+                        strokeWidth={2}
+                        dot={{ fill: '#8b5cf6', r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="total" 
+                        name="Total"
+                        stroke="#10b981" 
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={{ fill: '#10b981', r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-slate-400">
+                    No hay datos de tendencia disponibles
+                  </div>
+                )}
+              </div>
             </div>
           </>
         );
