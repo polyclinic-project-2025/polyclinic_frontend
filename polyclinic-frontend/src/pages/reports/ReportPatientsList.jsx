@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, Users, FileText, Calendar, Phone, MapPin, User, Loader2 } from "lucide-react";
+import { BarChart3, Users, FileText, Calendar, Phone, MapPin, User, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import analyticsService from "../../services/analyticsService";
 
 const ReportPatientsList = () => {
   const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState([]);
   const [error, setError] = useState("");
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10); // 10 pacientes por página
 
   // Cargar pacientes al montar el componente
   useEffect(() => {
@@ -35,6 +39,7 @@ const ReportPatientsList = () => {
       }));
 
       setPatients(normalized);
+      setCurrentPage(1); // Reiniciar a página 1 cuando se cargan nuevos datos
     } catch (err) {
       console.error("Error al obtener la lista de pacientes:", err);
       setError("Error al obtener los datos. Por favor, intente nuevamente.");
@@ -42,6 +47,60 @@ const ReportPatientsList = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Cálculos para paginación
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPatients = patients.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(patients.length / itemsPerPage);
+
+  // Cambiar de página
+  const goToPage = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Calcular números de página para mostrar
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      // Mostrar todas las páginas
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Mostrar páginas alrededor de la actual
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, currentPage + 2);
+      
+      if (currentPage <= 3) {
+        startPage = 1;
+        endPage = maxPagesToShow;
+      } else if (currentPage >= totalPages - 2) {
+        startPage = totalPages - maxPagesToShow + 1;
+        endPage = totalPages;
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+    }
+    
+    return pageNumbers;
   };
 
   return (
@@ -102,90 +161,166 @@ const ReportPatientsList = () => {
           </div>
         )}
 
-        {/* Tabla de pacientes */}
+        {/* Tabla de pacientes con paginación */}
         {!loading && !error && patients.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      Nombre del Paciente
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      Identificación
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Edad
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      Contacto
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      Dirección
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {patients.map((patient, index) => (
-                  <tr 
-                    key={`${patient.identification}-${index}`}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {patient.patientName}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-md">
-                        {patient.identification}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
-                        {patient.age} años
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600">
-                        {patient.contact}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600 max-w-md">
-                        {patient.address}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Contador de pacientes */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <div className="text-sm text-gray-500">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>Total de pacientes registrados: <span className="font-semibold text-gray-700">{patients.length}</span></span>
-                </div>
+          <>
+            {/* Información de paginación superior */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-sm text-gray-600">
+                Mostrando <span className="font-semibold">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, patients.length)}</span> de{" "}
+                <span className="font-semibold">{patients.length}</span> pacientes
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Pacientes por página:</span>
+                <span className="font-semibold">{itemsPerPage}</span>
               </div>
             </div>
-          </div>
+
+            {/* Tabla de pacientes */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        Nombre del Paciente
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Identificación
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Edad
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4" />
+                        Contacto
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        Dirección
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentPatients.map((patient, index) => (
+                    <tr 
+                      key={`${patient.identification}-${index}`}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {patient.patientName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-md">
+                          {patient.identification}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
+                          {patient.age} años
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-600">
+                          {patient.contact}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-600 max-w-md">
+                          {patient.address}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginación */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                {/* Información de paginación */}
+                <div className="text-sm text-gray-600">
+                  Página <span className="font-semibold">{currentPage}</span> de{" "}
+                  <span className="font-semibold">{totalPages}</span>
+                </div>
+
+                {/* Controles de paginación */}
+                <div className="flex items-center gap-2">
+                  {/* Botón anterior */}
+                  <button
+                    onClick={prevPage}
+                    disabled={currentPage === 1}
+                    className={`p-2 rounded-lg ${
+                      currentPage === 1
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  {/* Números de página */}
+                  <div className="flex gap-1">
+                    {getPageNumbers().map((pageNumber) => (
+                      <button
+                        key={pageNumber}
+                        onClick={() => goToPage(pageNumber)}
+                        className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium ${
+                          currentPage === pageNumber
+                            ? "bg-purple-600 text-white"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Botón siguiente */}
+                  <button
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 rounded-lg ${
+                      currentPage === totalPages
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Contador total */}
+                <div className="text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    <span>Total: <span className="font-semibold">{patients.length}</span> pacientes</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información de rango (opcional) */}
+              <div className="mt-4 text-center text-xs text-gray-500">
+                Pacientes {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, patients.length)} de {patients.length}
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
