@@ -1,11 +1,50 @@
 // pages/reportes/ReporteFuncion5.jsx
-import React from "react";
-import { Activity, BarChart3 } from "lucide-react";
+import React, { useState } from "react";
+import { Activity, BarChart3, Download, AlertCircle, X } from "lucide-react";
 import MedicationConsumptionFilter from "../../components/MedicationConsumptionFilter";
 import analyticsService from "../../services/analyticsService";
 import medicationService from "../../services/medicationService";
 
 const ReporteFuncion5 = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [exportParams, setExportParams] = useState(null);
+
+  const handleExport = async () => {
+    if (!exportParams || !exportParams.medicationId || !exportParams.month || !exportParams.year) {
+      setError('Debe realizar una búsqueda antes de exportar');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('Exportando con parámetros:', exportParams);
+      const url = await analyticsService.getMedicationConsumptionPdf(exportParams);
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `consumo_medicamento_${exportParams.month}_${exportParams.year}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Consumo de medicamento exportado exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar consumo de medicamento';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -33,10 +72,44 @@ const ReporteFuncion5 = () => {
         <span className="text-orange-600 font-semibold">Consumo de Medicamentos</span>
       </div>
 
+      {/* Botón de exportación */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading || !exportParams}
+        >
+          <Download className="w-5 h-5" />
+          Exportar PDF
+        </button>
+      </div>
+
+      {/* Alerts */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+          <AlertCircle className="text-red-600 flex-shrink-0" />
+          <p className="text-red-800">{error}</p>
+          <button onClick={() => setError('')} className="ml-auto">
+            <X className="w-5 h-5 text-red-600" />
+          </button>
+        </div>
+      )}
+
+      {success && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+          <AlertCircle className="text-green-600 flex-shrink-0" />
+          <p className="text-green-800">{success}</p>
+          <button onClick={() => setSuccess('')} className="ml-auto">
+            <X className="w-5 h-5 text-green-600" />
+          </button>
+        </div>
+      )}
+
       {/* Widget de Búsqueda de Consumo */}
       <MedicationConsumptionFilter 
         analyticsService={analyticsService}
         medicationService={medicationService}
+        onSearchParams={setExportParams}
       />
     </div>
   );

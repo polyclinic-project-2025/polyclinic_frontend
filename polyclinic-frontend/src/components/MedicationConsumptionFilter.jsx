@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Package, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle } from "lucide-react";
 
-const MedicationConsumptionFilter = ({ analyticsService, medicationService }) => {
+const MedicationConsumptionFilter = ({ analyticsService, medicationService, onSearchParams }) => {
   const [loading, setLoading] = useState(false);
   const [loadingMeds, setLoadingMeds] = useState(true);
   const [medications, setMedications] = useState([]);
@@ -47,6 +47,10 @@ const MedicationConsumptionFilter = ({ analyticsService, medicationService }) =>
   const handleSearch = async () => {
     if (!selectedMedicationId) {
       setError("Debe seleccionar un medicamento");
+      // Limpiar los parámetros de exportación
+      if (onSearchParams) {
+        onSearchParams(null);
+      }
       return;
     }
 
@@ -55,17 +59,28 @@ const MedicationConsumptionFilter = ({ analyticsService, medicationService }) =>
     setConsumptionData(null);
 
     try {
-      const response = await analyticsService.getMedicationConsumption({
+      const params = {
         medicationId: selectedMedicationId,
         month: parseInt(month),
         year: parseInt(year),
-      });
+      };
+
+      const response = await analyticsService.getMedicationConsumption(params);
 
       // Los datos vienen directamente en response
       if (response && response.scientificName) {
         setConsumptionData(response);
+        
+        // Pasar los parámetros al componente padre para exportación
+        if (onSearchParams) {
+          onSearchParams(params);
+        }
       } else {
         setError("No se pudieron obtener los datos de consumo");
+        // Limpiar los parámetros en caso de error
+        if (onSearchParams) {
+          onSearchParams(null);
+        }
       }
     } catch (err) {
       console.error("Error al obtener consumo:", err);
@@ -76,6 +91,11 @@ const MedicationConsumptionFilter = ({ analyticsService, medicationService }) =>
         setError(err.message);
       } else {
         setError("Error al obtener los datos de consumo");
+      }
+      
+      // Limpiar los parámetros en caso de error
+      if (onSearchParams) {
+        onSearchParams(null);
       }
     } finally {
       setLoading(false);
@@ -162,6 +182,11 @@ const MedicationConsumptionFilter = ({ analyticsService, medicationService }) =>
               onChange={(e) => {
                 setSelectedMedicationId(e.target.value);
                 setError("");
+                setConsumptionData(null);
+                // Limpiar parámetros cuando cambia la selección
+                if (onSearchParams) {
+                  onSearchParams(null);
+                }
               }}
               disabled={loadingMeds}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white text-gray-800 font-medium disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -184,7 +209,12 @@ const MedicationConsumptionFilter = ({ analyticsService, medicationService }) =>
             </label>
             <select
               value={month}
-              onChange={(e) => setMonth(e.target.value)}
+              onChange={(e) => {
+                setMonth(e.target.value);
+                if (consumptionData && onSearchParams) {
+                  onSearchParams(null);
+                }
+              }}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white text-gray-800 font-medium"
             >
               {months.map((m) => (
@@ -202,7 +232,12 @@ const MedicationConsumptionFilter = ({ analyticsService, medicationService }) =>
             </label>
             <select
               value={year}
-              onChange={(e) => setYear(e.target.value)}
+              onChange={(e) => {
+                setYear(e.target.value);
+                if (consumptionData && onSearchParams) {
+                  onSearchParams(null);
+                }
+              }}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white text-gray-800 font-medium"
             >
               {years.map((y) => (

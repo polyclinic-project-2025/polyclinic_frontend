@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Stethoscope, Clock, FileText, Loader2, AlertCircle, Calendar, User, Search, ChevronDown, Building2, X, Pill } from "lucide-react";
 
-const RecentConsultationsWidget = ({ service }) => {
+const RecentConsultationsWidget = ({ service, onSearchParams }) => {
   const [recentConsultations, setRecentConsultations] = useState([]);
   const [allPatients, setAllPatients] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -92,6 +92,11 @@ const RecentConsultationsWidget = ({ service }) => {
       if (!selectedPatient) {
         setRecentConsultations([]);
         setLoading(false);
+        
+        // Limpiar los parámetros de exportación
+        if (onSearchParams) {
+          onSearchParams(null);
+        }
         return;
       }
 
@@ -104,17 +109,27 @@ const RecentConsultationsWidget = ({ service }) => {
         console.log("Consultas obtenidas:", data);
         
         setRecentConsultations(data);
+        
+        // Pasar los parámetros al componente padre para exportación
+        if (onSearchParams) {
+          onSearchParams({ patientId: selectedPatient.id });
+        }
       } catch (err) {
         console.error("Error detallado:", err);
         const errorMessage = err.message || "Error al cargar las últimas consultas";
         setError(errorMessage);
+        
+        // Limpiar los parámetros en caso de error
+        if (onSearchParams) {
+          onSearchParams(null);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadRecentConsultations();
-  }, [selectedPatient, service]);
+  }, [selectedPatient, service, onSearchParams]);
 
   const handleSelectPatient = (patient) => {
     console.log("Paciente seleccionado:", patient);
@@ -130,6 +145,11 @@ const RecentConsultationsWidget = ({ service }) => {
     setRecentConsultations([]);
     setError("");
     searchInputRef.current?.focus();
+    
+    // Limpiar los parámetros de exportación
+    if (onSearchParams) {
+      onSearchParams(null);
+    }
   };
 
   return (

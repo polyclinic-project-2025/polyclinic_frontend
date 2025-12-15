@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Filter, Calendar, Search, Loader2, AlertCircle, Stethoscope, FileText, X, User, ChevronDown, Building2 } from "lucide-react";
 import { formatDateMedium } from "../utils/dateUtils";
 
-const ConsultationsDateRangeFilter = ({ service }) => {
+const ConsultationsDateRangeFilter = ({ service, onSearchParams }) => {
   // Estados del paciente
   const [allPatients, setAllPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -104,6 +104,11 @@ const ConsultationsDateRangeFilter = ({ service }) => {
     setEndDateStr("");
     setError("");
     searchInputRef.current?.focus();
+    
+    // Limpiar los parámetros de exportación
+    if (onSearchParams) {
+      onSearchParams(null);
+    }
   };
 
   const handleSearch = async (e) => {
@@ -111,11 +116,17 @@ const ConsultationsDateRangeFilter = ({ service }) => {
     
     if (!selectedPatient) {
       setError("Por favor, selecciona un paciente primero.");
+      if (onSearchParams) {
+        onSearchParams(null);
+      }
       return;
     }
     
     if (!startDateStr || !endDateStr) {
       setError("Por favor, selecciona una fecha de inicio y una fecha de fin.");
+      if (onSearchParams) {
+        onSearchParams(null);
+      }
       return;
     }
 
@@ -135,19 +146,29 @@ const ConsultationsDateRangeFilter = ({ service }) => {
       if (startDateTime > endDateTime) {
         setError("La fecha de inicio no puede ser posterior a la fecha de fin.");
         setLoading(false);
+        if (onSearchParams) {
+          onSearchParams(null);
+        }
         return;
       }
 
       console.log(`Buscando consultas del paciente ${selectedPatient.id} entre ${startDateTime} y ${endDateTime}`);
 
-      // Llamar al servicio con los parámetros correctos
-      const data = await service.getByDateRange({
+      const params = {
         patientId: selectedPatient.id,
         startDate: startDateTime,
         endDate: endDateTime
-      });
+      };
+
+      // Llamar al servicio con los parámetros correctos
+      const data = await service.getByDateRange(params);
       
       setFilteredResults(data);
+
+      // Pasar los parámetros al componente padre para exportación
+      if (onSearchParams) {
+        onSearchParams(params);
+      }
 
       if (data.length === 0) {
         setError(`No se encontraron consultas de ${selectedPatient.name} entre ${startDateStr} y ${endDateStr}.`);
@@ -156,6 +177,11 @@ const ConsultationsDateRangeFilter = ({ service }) => {
       console.error("Error al buscar consultas:", err);
       const errorMessage = err.message || "Error al buscar consultas por rango";
       setError(errorMessage);
+      
+      // Limpiar los parámetros en caso de error
+      if (onSearchParams) {
+        onSearchParams(null);
+      }
     } finally {
       setLoading(false);
     }
