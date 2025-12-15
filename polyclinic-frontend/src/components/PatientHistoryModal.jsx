@@ -1,4 +1,4 @@
-// components/PatientHistoryModal.jsx
+// components/PatientHistoryModal.jsx - CORREGIDO
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { consultationDerivationService } from '../services/consultationDerivationService';
 import { consultationReferralService } from '../services/consultationReferralService';
-import { referralService } from '../services/referralService'; // IMPORTADO
+import { referralService } from '../services/referralService';
 import medicationDerivationService from '../services/medicationDerivationService';
 import medicationReferralService from '../services/medicationReferralService';
 import medicationService from '../services/medicationService';
@@ -33,10 +33,22 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
   const [mergeDepartments, setMergeDepartments] = useState(false);
   const [expandedConsultations, setExpandedConsultations] = useState({});
 
+  // Función para normalizar IDs
+  const normalizeId = (id) => {
+    if (!id) return '';
+    return id.toString().toLowerCase().replace(/[-\s]/g, '');
+  };
+
   // Cargar historial cuando se abre el modal
   useEffect(() => {
     if (isOpen && patientId) {
       loadPatientHistory();
+    } else {
+      setAllConsultations([]);
+      setFilteredConsultations([]);
+      setSelectedDepartments([]);
+      setMergeDepartments(false);
+      setExpandedConsultations({});
     }
   }, [isOpen, patientId]);
 
@@ -45,11 +57,13 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
       setLoading(true);
       setError('');
 
+      const normalizedPatientId = normalizeId(patientId);
+
       // 1. Cargar todas las consultas y remisiones
       const [allDerivationConsults, allReferralConsults, allReferrals] = await Promise.all([
         consultationDerivationService.getAll(),
         consultationReferralService.getAll(),
-        referralService.getAll() // Cargar todas las remisiones para el mapa
+        referralService.getAll()
       ]);
 
       // 2. Crear mapa de referralId -> patientId
@@ -58,20 +72,20 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
         referralPatientMap[referral.referralId] = referral.patientId;
       });
 
-      // 3. Filtrar por paciente (en frontend)
+      // 3. Filtrar derivaciones por paciente
       const patientDerivationConsults = allDerivationConsults.filter(
-        consult => consult.patientId === patientId
+        consult => normalizeId(consult.patientId) === normalizedPatientId
       );
       
-      // 4. Filtrar consultas por remisión usando el mapa
+      // 4. Filtrar consultas por remisión
       const patientReferralConsults = allReferralConsults.filter(
         consult => {
           const referralPatientId = referralPatientMap[consult.referralId];
-          return referralPatientId === patientId;
+          return normalizeId(referralPatientId) === normalizedPatientId;
         }
       );
 
-      // 5. Cargar todos los medicamentos para el mapa
+      // 5. Cargar todos los medicamentos
       const allMedications = await medicationService.getAll();
       const medicationMap = {};
       allMedications.forEach(med => {
@@ -82,22 +96,22 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
       });
       setMedicationMap(medicationMap);
 
-      // 6. Preparar estructura de consultas con tipos
+      // 6. Preparar estructura de consultas (SIN RENOMBRAR department)
       const formattedDerivationConsults = patientDerivationConsults.map(consult => ({
-        ...consult,
+        ...consult, // Mantiene departmentToName
         type: 'derivation',
         date: consult.dateTimeCDer,
-        department: consult.departmentToName,
+        // departmentToName ya viene en consult
         doctor: consult.doctorName,
         diagnosis: consult.diagnosis,
         consultationId: consult.consultationDerivationId
       }));
 
       const formattedReferralConsults = patientReferralConsults.map(consult => ({
-        ...consult,
+        ...consult, // Mantiene departmentName
         type: 'referral',
         date: consult.dateTimeCRem || consult.dateTimeCRe,
-        department: consult.departmentName,
+        // departmentName ya viene en consult
         doctor: consult.doctorFullName,
         diagnosis: consult.diagnosis,
         consultationId: consult.consultationReferralId
@@ -110,8 +124,10 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
       setAllConsultations(allConsults);
       setFilteredConsultations(allConsults);
 
-      // 8. Extraer departamentos únicos
-      const departments = [...new Set(allConsults.map(c => c.department).filter(Boolean))];
+      // 8. Extraer departamentos únicos (CORREGIDO)
+      const departments = [...new Set(
+        allConsults.map(c => c.departmentToName || c.departmentName).filter(Boolean)
+      )];
       setAllDepartments(departments);
 
     } catch (err) {
@@ -122,7 +138,7 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
     }
   };
 
-  // Cargar medicamentos para una consulta específica
+  // Cargar medicamentos para una consulta
   const loadMedicationsForConsultation = async (consultation) => {
     try {
       let medications = [];
@@ -156,30 +172,34 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
     }));
   };
 
-  // Aplicar filtros
+  // Aplicar filtros (CORREGIDO)
   useEffect(() => {
     let filtered = [...allConsultations];
 
-    // Filtrar por departamentos seleccionados
+    // Filtrar por departamentos seleccionados (CORREGIDO)
     if (selectedDepartments.length > 0) {
-      filtered = filtered.filter(consult => 
-        selectedDepartments.includes(consult.department)
-      );
+      filtered = filtered.filter(consult => {
+        // Usar departmentToName para derivaciones, departmentName para remisiones
+        const deptName = consult.departmentToName || consult.departmentName;
+        return selectedDepartments.includes(deptName);
+      });
     }
 
-    // Fusionar departamentos si está activado
+    // Fusionar departamentos si está activado (CORREGIDO)
     if (mergeDepartments && selectedDepartments.length > 1) {
       const mergedConsultations = {};
       
       filtered.forEach(consult => {
         const key = `${consult.date}-${consult.diagnosis}-${consult.doctor}`;
+        const deptName = consult.departmentToName || consult.departmentName;
+        
         if (!mergedConsultations[key]) {
           mergedConsultations[key] = {
             ...consult,
-            departments: [consult.department]
+            mergedDepartments: [deptName]
           };
         } else {
-          mergedConsultations[key].departments.push(consult.department);
+          mergedConsultations[key].mergedDepartments.push(deptName);
         }
       });
 
@@ -208,41 +228,43 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
 
   // Formatear fecha
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'Fecha no disponible';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Fecha inválida';
+      return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (err) {
+      return 'Fecha inválida';
+    }
   };
 
-  // Formatear fecha corta (solo fecha)
+  // Formatear fecha corta
   const formatShortDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    if (!dateString) return 'Fecha no disponible';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Fecha inválida';
+      return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (err) {
+      return 'Fecha inválida';
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 bg-white">
           <div className="flex items-center justify-between">
@@ -251,18 +273,11 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
                 <Clock className="w-6 h-6 text-cyan-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Historial Médico
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Consultas y medicamentos recetados
-                </p>
+                <h2 className="text-2xl font-bold text-gray-900">Historial Médico</h2>
+                <p className="text-sm text-gray-600">Consultas y medicamentos recetados</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition"
-            >
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -276,48 +291,24 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
                 <Filter className="w-5 h-5 text-gray-500" />
                 <h3 className="text-lg font-semibold text-gray-900">Filtrar por Departamento</h3>
               </div>
-              
               <div className="flex items-center gap-3">
-                <button
-                  onClick={clearFilters}
-                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition"
-                >
+                <button onClick={clearFilters} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition">
                   Limpiar filtros
                 </button>
-                
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={mergeDepartments}
-                    onChange={(e) => setMergeDepartments(e.target.checked)}
-                    className="w-4 h-4 text-cyan-600 rounded focus:ring-cyan-500"
-                    disabled={selectedDepartments.length < 2}
-                  />
-                  <span className="text-sm text-gray-700">
-                    Fusionar departamentos seleccionados
-                  </span>
+                  <input type="checkbox" checked={mergeDepartments} onChange={(e) => setMergeDepartments(e.target.checked)} className="w-4 h-4 text-cyan-600 rounded focus:ring-cyan-500" disabled={selectedDepartments.length < 2} />
+                  <span className="text-sm text-gray-700">Fusionar departamentos seleccionados</span>
                 </label>
               </div>
             </div>
 
-            {/* Lista de departamentos */}
             {allDepartments.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {allDepartments.map((dept, index) => (
-                  <button
-                    key={index}
-                    onClick={() => toggleDepartment(dept)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition ${
-                      selectedDepartments.includes(dept)
-                        ? 'bg-cyan-600 text-white'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
+                  <button key={index} onClick={() => toggleDepartment(dept)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition ${selectedDepartments.includes(dept) ? 'bg-cyan-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
                     <Building2 className="w-4 h-4" />
                     <span className="text-sm">{dept}</span>
-                    {selectedDepartments.includes(dept) && (
-                      <Check className="w-4 h-4" />
-                    )}
+                    {selectedDepartments.includes(dept) && <Check className="w-4 h-4" />}
                   </button>
                 ))}
               </div>
@@ -325,18 +316,11 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
               <p className="text-sm text-gray-500">No hay departamentos disponibles</p>
             )}
 
-            {/* Información de filtros activos */}
             {(selectedDepartments.length > 0 || mergeDepartments) && (
               <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-lg">
                 <p className="text-sm text-cyan-800">
-                  {selectedDepartments.length > 0 && (
-                    <span>
-                      Departamentos seleccionados: {selectedDepartments.join(', ')}
-                    </span>
-                  )}
-                  {mergeDepartments && selectedDepartments.length > 1 && (
-                    <span className="ml-2">• Fusionados</span>
-                  )}
+                  {selectedDepartments.length > 0 && <span>Departamentos seleccionados: {selectedDepartments.join(', ')}</span>}
+                  {mergeDepartments && selectedDepartments.length > 1 && <span className="ml-2">• Fusionados</span>}
                 </p>
               </div>
             )}
@@ -357,10 +341,7 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
               <div className="text-center">
                 <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
                 <p className="text-gray-600">{error}</p>
-                <button
-                  onClick={loadPatientHistory}
-                  className="mt-4 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition"
-                >
+                <button onClick={loadPatientHistory} className="mt-4 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition">
                   Reintentar
                 </button>
               </div>
@@ -369,18 +350,9 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
             <div className="text-center py-12">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg">
-                {selectedDepartments.length > 0
-                  ? 'No hay consultas para los departamentos seleccionados'
-                  : 'No hay consultas registradas para este paciente'}
+                {selectedDepartments.length > 0 ? 'No hay consultas para los departamentos seleccionados' : 'No hay consultas registradas para este paciente'}
               </p>
-              {selectedDepartments.length > 0 && (
-                <button
-                  onClick={clearFilters}
-                  className="mt-4 px-4 py-2 text-cyan-600 hover:text-cyan-700"
-                >
-                  Limpiar filtros
-                </button>
-              )}
+              {selectedDepartments.length > 0 && <button onClick={clearFilters} className="mt-4 px-4 py-2 text-cyan-600 hover:text-cyan-700">Limpiar filtros</button>}
             </div>
           ) : (
             <div className="space-y-6">
@@ -389,19 +361,8 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
                   {filteredConsultations.length} consulta{filteredConsultations.length !== 1 ? 's' : ''} encontrada{filteredConsultations.length !== 1 ? 's' : ''}
                 </p>
               </div>
-
-              {/* Lista de consultas */}
               {filteredConsultations.map((consultation, index) => (
-                <ConsultationCard
-                  key={index}
-                  consultation={consultation}
-                  isExpanded={expandedConsultations[consultation.consultationId]}
-                  onToggleExpand={() => toggleExpandConsultation(consultation.consultationId)}
-                  loadMedications={loadMedicationsForConsultation}
-                  formatDate={formatDate}
-                  formatShortDate={formatShortDate}
-                  mergeDepartments={mergeDepartments}
-                />
+                <ConsultationCard key={`${consultation.consultationId}-${index}`} consultation={consultation} isExpanded={expandedConsultations[consultation.consultationId]} onToggleExpand={() => toggleExpandConsultation(consultation.consultationId)} loadMedications={loadMedicationsForConsultation} formatDate={formatDate} formatShortDate={formatShortDate} mergeDepartments={mergeDepartments} />
               ))}
             </div>
           )}
@@ -411,21 +372,12 @@ const PatientHistoryModal = ({ isOpen, onClose, patientId }) => {
   );
 };
 
-// Subcomponente para mostrar cada consulta
-const ConsultationCard = ({ 
-  consultation, 
-  isExpanded, 
-  onToggleExpand,
-  loadMedications,
-  formatDate,
-  formatShortDate,
-  mergeDepartments
-}) => {
+// Subcomponente para mostrar cada consulta (CORREGIDO)
+const ConsultationCard = ({ consultation, isExpanded, onToggleExpand, loadMedications, formatDate, formatShortDate, mergeDepartments }) => {
   const [medications, setMedications] = useState([]);
   const [loadingMedications, setLoadingMedications] = useState(false);
   const [medicationsLoaded, setMedicationsLoaded] = useState(false);
 
-  // Cargar medicamentos cuando se expande
   useEffect(() => {
     if (isExpanded && !medicationsLoaded) {
       loadConsultationMedications();
@@ -447,101 +399,63 @@ const ConsultationCard = ({
 
   const getTypeBadge = (type) => {
     if (type === 'derivation') {
-      return {
-        label: 'Derivación',
-        bgColor: 'bg-blue-100',
-        textColor: 'text-blue-800',
-        borderColor: 'border-blue-200'
-      };
+      return { label: 'Derivación', bgColor: 'bg-blue-100', textColor: 'text-blue-800', borderColor: 'border-blue-200' };
     } else {
-      return {
-        label: 'Remisión',
-        bgColor: 'bg-purple-100',
-        textColor: 'text-purple-800',
-        borderColor: 'border-purple-200'
-      };
+      return { label: 'Remisión', bgColor: 'bg-purple-100', textColor: 'text-purple-800', borderColor: 'border-purple-200' };
     }
   };
 
   const typeBadge = getTypeBadge(consultation.type);
+  // Obtener nombre del departamento (CORREGIDO)
+  const deptName = consultation.departmentToName || consultation.departmentName;
+  // Obtener departamentos fusionados si aplica
+  const mergedDepts = consultation.mergedDepartments;
 
   return (
     <div className="border border-gray-200 rounded-xl overflow-hidden">
-      {/* Encabezado de la consulta */}
-      <button
-        onClick={onToggleExpand}
-        className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
-      >
+      <button onClick={onToggleExpand} className="w-full p-4 text-left hover:bg-gray-50 transition-colors">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${typeBadge.bgColor}`}>
-              {consultation.type === 'derivation' ? (
-                <Stethoscope className={`w-4 h-4 ${typeBadge.textColor}`} />
-              ) : (
-                <FileText className={`w-4 h-4 ${typeBadge.textColor}`} />
-              )}
+              {consultation.type === 'derivation' ? <Stethoscope className={`w-4 h-4 ${typeBadge.textColor}`} /> : <FileText className={`w-4 h-4 ${typeBadge.textColor}`} />}
             </div>
-            
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-1">
-                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${typeBadge.bgColor} ${typeBadge.textColor}`}>
-                  {typeBadge.label}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {formatShortDate(consultation.date)}
-                </span>
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${typeBadge.bgColor} ${typeBadge.textColor}`}>{typeBadge.label}</span>
+                <span className="text-sm text-gray-500">{formatShortDate(consultation.date)}</span>
               </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <span className="text-sm text-gray-700 truncate">
-                    {mergeDepartments && consultation.departments
-                      ? consultation.departments.join(', ')
-                      : consultation.department || 'Sin departamento'}
+                    {mergeDepartments && mergedDepts ? mergedDepts.join(', ') : deptName || 'Sin departamento'}
                   </span>
                 </div>
-                
                 <div className="flex items-center gap-2">
                   <Stethoscope className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-700 truncate">
-                    {consultation.doctor || 'Sin doctor asignado'}
-                  </span>
+                  <span className="text-sm text-gray-700 truncate">{consultation.doctor || 'Sin doctor asignado'}</span>
                 </div>
-                
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-700 truncate">
-                    {consultation.diagnosis || 'Sin diagnóstico'}
-                  </span>
+                  <span className="text-sm text-gray-700 truncate">{consultation.diagnosis || 'Sin diagnóstico'}</span>
                 </div>
               </div>
             </div>
           </div>
-          
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">
-              {formatDate(consultation.date)}
-            </span>
-            {isExpanded ? (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            ) : (
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            )}
+            <span className="text-xs text-gray-500">{formatDate(consultation.date)}</span>
+            {isExpanded ? <ChevronDown className="w-5 h-5 text-gray-400" /> : <ChevronRight className="w-5 h-5 text-gray-400" />}
           </div>
         </div>
       </button>
 
-      {/* Contenido expandido */}
       {isExpanded && (
         <div className="border-t border-gray-200 p-4 bg-gray-50">
-          {/* Medicamentos */}
           <div className="mb-3">
             <div className="flex items-center gap-2 mb-2">
               <Pill className="w-4 h-4 text-gray-500" />
               <h4 className="text-sm font-medium text-gray-700">Medicamentos Recetados</h4>
             </div>
-            
             {loadingMedications ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="w-5 h-5 animate-spin text-cyan-600" />
@@ -552,17 +466,11 @@ const ConsultationCard = ({
                   <div key={idx} className="p-2 bg-white rounded-lg border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">
-                          {med.commercialName || 'Medicamento sin nombre'}
-                        </p>
-                        {med.scientificName && (
-                          <p className="text-xs text-gray-500 italic">{med.scientificName}</p>
-                        )}
+                        <p className="font-medium text-gray-900">{med.commercialName || 'Medicamento sin nombre'}</p>
+                        {med.scientificName && <p className="text-xs text-gray-500 italic">{med.scientificName}</p>}
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-600">
-                          Cantidad: {med.quantity}
-                        </span>
+                        <span className="text-sm text-gray-600">Cantidad: {med.quantity}</span>
                       </div>
                     </div>
                   </div>
@@ -572,8 +480,6 @@ const ConsultationCard = ({
               <p className="text-sm text-gray-500 pl-6">No se recetaron medicamentos</p>
             )}
           </div>
-
-          {/* Información detallada */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="p-3 bg-white rounded-lg border border-gray-200">
               <div className="flex items-center gap-2 mb-1">
@@ -582,24 +488,13 @@ const ConsultationCard = ({
               </div>
               <p className="text-sm text-gray-900">{formatDate(consultation.date)}</p>
             </div>
-            
-            {consultation.type === 'derivation' ? (
-              <div className="p-3 bg-white rounded-lg border border-gray-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <Building2 className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700">Departamento</span>
-                </div>
-                <p className="text-sm text-gray-900">{consultation.department}</p>
+            <div className="p-3 bg-white rounded-lg border border-gray-200">
+              <div className="flex items-center gap-2 mb-1">
+                <Building2 className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-700">Departamento</span>
               </div>
-            ) : (
-              <div className="p-3 bg-white rounded-lg border border-gray-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <Stethoscope className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700">Doctor</span>
-                </div>
-                <p className="text-sm text-gray-900">{consultation.doctor}</p>
-              </div>
-            )}
+              <p className="text-sm text-gray-900">{deptName || 'Sin departamento'}</p>
+            </div>
           </div>
         </div>
       )}
