@@ -133,8 +133,7 @@ const Dashboard = () => {
       try {
         setLoadingTodayStats(true);
         const today = new Date();
-        const todayISO = today.toISOString().split('T')[0]; // "2025-12-14"
-        const todayDMY = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`; // "14/12/2025"
+        const todayISO = today.toISOString().split('T')[0]; // "2025-12-15"
         
         const [allReferrals, allDerivations, emergenciesToday] = await Promise.all([
           consultationReferralService.getAll().catch(() => []),
@@ -142,36 +141,17 @@ const Dashboard = () => {
           emergencyRoomCareService.getByDate(todayISO).catch(() => [])
         ]);
 
-        console.log('Today ISO:', todayISO);
-        console.log('Today DMY:', todayDMY);
-        console.log('All Referrals:', allReferrals);
-
-        // Verificar campos de fecha en los datos
-        if (Array.isArray(allReferrals) && allReferrals.length > 0) {
-          console.log('Ejemplo referral completo:', allReferrals[0]);
-          console.log('Campo dateTimeCRem:', allReferrals[0].dateTimeCRem);
-        }
-
-        // Función para verificar si una fecha coincide con hoy
-        const isToday = (dateStr) => {
-          if (!dateStr) return false;
-          try {
-            const dateObj = new Date(dateStr);
-            const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-            return dateObj >= todayStart && dateObj < todayEnd;
-          } catch {
-            return false;
-          }
-        };
-
-        // Filtrar consultas de hoy
+        // Usar la misma lógica que el gráfico de tendencia (que sí funciona)
         const referralsToday = Array.isArray(allReferrals) 
-          ? allReferrals.filter(c => isToday(c.dateTimeCRem)).length 
+          ? allReferrals.filter(c => c.dateTimeCRem?.startsWith(todayISO)).length 
           : 0;
         const derivationsToday = Array.isArray(allDerivations) 
-          ? allDerivations.filter(c => isToday(c.dateTimeCDer)).length 
+          ? allDerivations.filter(c => c.dateTimeCDer?.startsWith(todayISO)).length 
           : 0;
+
+        console.log('Today ISO:', todayISO);
+        console.log('Referrals hoy:', referralsToday);
+        console.log('Derivations hoy:', derivationsToday);
 
         setTodayStats({
           consultationsReferral: referralsToday,
