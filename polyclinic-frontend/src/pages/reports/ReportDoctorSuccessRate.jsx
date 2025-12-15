@@ -1,24 +1,24 @@
-// pages/reportes/ReporteFuncion6.jsx
+// pages/reportes/ReportDoctorSuccessRate.jsx
 import React, { useState } from "react";
-import { BarChart3, LineChart } from "lucide-react";
+import { BarChart3, Database } from "lucide-react";
 
-const ReporteFuncion6 = () => {
+const ReporteFuncion7 = () => {
   const [loading, setLoading] = useState(false);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-pink-500 to-pink-700 rounded-xl p-6 shadow-lg">
+      <div className="bg-gradient-to-r from-indigo-500 to-indigo-700 rounded-xl p-6 shadow-lg">
         <div className="flex items-center gap-4">
           <div className="bg-white/20 p-3 rounded-lg">
-            <LineChart className="w-8 h-8 text-white" />
+            <Database className="w-8 h-8 text-white" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              Función 6
+              Función 7
             </h1>
-            <p className="text-pink-50 mt-1">
-              Descripción de la funcionalidad del reporte 6
+            <p className="text-indigo-50 mt-1">
+              Descripción de la funcionalidad del reporte 7
             </p>
           </div>
         </div>
@@ -29,7 +29,7 @@ const ReporteFuncion6 = () => {
         <BarChart3 className="w-4 h-4" />
         <span>Reportes</span>
         <span>/</span>
-        <span className="text-pink-600 font-semibold">Función 6</span>
+        <span className="text-indigo-600 font-semibold">Función 7</span>
       </div>
 
       {/* Contenido del Reporte */}
@@ -39,12 +39,12 @@ const ReporteFuncion6 = () => {
         </h2>
         
         <div className="text-center py-12">
-          <LineChart className="w-16 h-16 text-pink-300 mx-auto mb-4" />
+          <Database className="w-16 h-16 text-indigo-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">
             Reporte en desarrollo
           </p>
           <p className="text-gray-400 text-sm mt-2">
-            Aquí irá el contenido específico de la Función 6
+            Aquí irá el contenido específico de la Función 7
           </p>
         </div>
       </div>
@@ -52,4 +52,4 @@ const ReporteFuncion6 = () => {
   );
 };
 
-export default ReporteFuncion6;
+export default ReporteFuncion7;
