@@ -13,6 +13,29 @@ const analyticsService = {
     }
   },
 
+  // Exportar las últimas 10 consultas unificadas a PDF
+  getLast10Pdf: async (patientId) => {
+    try {
+      const result = await api.get('/Analytics/last10/pdf', {
+        params: { patientId }
+      });
+
+      const byteCharacters = atob(result.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      const url = URL.createObjectURL(blob);
+      return url;
+    } catch (error) {
+      console.error('Error exporting last 10 consultations PDF', error);
+      throw error;
+    }
+  },
+
   // Obtener consultas unificadas por rango de fechas
   getByDateRange: async (params) => {
     try {
@@ -31,6 +54,33 @@ const analyticsService = {
     }
   },
 
+  // Exportar consultas unificadas por rango de fechas a PDF
+  getByDateRangePdf: async (params) => {
+    try {
+      const result = await api.get('/Analytics/range/pdf', {
+        params: {
+          patientId: params.patientId,
+          startDate: params.startDate,
+          endDate: params.endDate,
+        },
+      });
+
+      const byteCharacters = atob(result.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      const url = URL.createObjectURL(blob);
+      return url;
+    } catch (error) {
+      console.error('Error exporting consultations by range PDF', error);
+      throw error;
+    }
+  },
+
   // Obtener consumo mensual de un medicamento
   getMedicationConsumption: async (params) => {
     try {
@@ -41,12 +91,36 @@ const analyticsService = {
           year: params.year,
         },
       });
-
-      // El backend devuelve: { success: true, data: {...}, message: "..." }
-      // El data contiene el MedicationConsumptionReadModel
       return response;
     } catch (error) {
       console.error('Error fetching medication consumption:', error);
+      throw error;
+    }
+  },
+
+  // Exportar consumo mensual de medicamento a PDF
+  getMedicationConsumptionPdf: async (params) => {
+    try {
+      const result = await api.get('/Analytics/medication-consumption/pdf', {
+        params: {
+          medicationId: params.medicationId,
+          month: params.month,
+          year: params.year,
+        },
+      });
+
+      const byteCharacters = atob(result.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      const url = URL.createObjectURL(blob);
+      return url;
+    } catch (error) {
+      console.error('Error exporting medication consumption PDF', error);
       throw error;
     }
   },
@@ -75,7 +149,6 @@ const analyticsService = {
         },
       });
 
-      // Decodificar Base64 y descargar
       const byteCharacters = atob(result.data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -84,7 +157,6 @@ const analyticsService = {
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: 'application/pdf' });
 
-      // Crear enlace de descarga
       const url = URL.createObjectURL(blob);
       return url;
     } catch (error) {
@@ -119,7 +191,6 @@ const analyticsService = {
         },
       });
 
-      // Decodificar Base64 y descargar
       const byteCharacters = atob(result.data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -128,7 +199,6 @@ const analyticsService = {
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: 'application/pdf' });
 
-      // Crear enlace de descarga
       const url = URL.createObjectURL(blob);
       return url;
     } catch (error) {
@@ -161,7 +231,6 @@ const analyticsService = {
         },
       });
 
-      // Decodificar Base64 y descargar
       const byteCharacters = atob(result.data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -170,7 +239,6 @@ const analyticsService = {
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: 'application/pdf' });
 
-      // Crear enlace de descarga
       const url = URL.createObjectURL(blob);
       return url;
     } catch (error) {
@@ -189,7 +257,8 @@ const analyticsService = {
       throw error;
     }
   },
-    // Exportar pacientes registrados a PDF
+  
+  // Exportar pacientes registrados a PDF
     exportPatientsListToPdf: async (params) => {
       try {
         const result = await api.get('/Analytics/patients-list/pdf');
