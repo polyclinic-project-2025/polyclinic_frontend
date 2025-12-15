@@ -1,6 +1,6 @@
 // pages/reportes/ReportDoctorMonthlyAverage.jsx
 import React, { useState } from "react";
-import { BarChart3, PieChart, AlertCircle, X, Loader2 } from "lucide-react";
+import { BarChart3, PieChart, AlertCircle, X, Loader2, Download } from "lucide-react";
 import analyticsService from "../../services/analyticsService"; 
 
 const ReportDoctorMonthlyAverage = () => {
@@ -9,6 +9,7 @@ const ReportDoctorMonthlyAverage = () => {
   const [error, setError] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [success, setSuccess] = useState('');
 
   const formatNumber = (v) => {
     if (v === null || v === undefined || Number.isNaN(Number(v))) return "N/A";
@@ -68,6 +69,33 @@ const ReportDoctorMonthlyAverage = () => {
       const message = err?.message ?? "Error al obtener los datos.";
       setError(message);
       setDoctors([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      const url = await analyticsService.getDoctorMonthlyAveragePdf({ from: fromDate, to: toDate });
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `atenciones_doctor_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Promedio de atenciones exportado exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar promedio de atenciones';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
     }
@@ -140,6 +168,17 @@ const ReportDoctorMonthlyAverage = () => {
             )}
           </button>
         </form>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-lg"
+          disabled={loading || !fromDate || !toDate}
+        >
+          <Download className="w-5 h-5" />
+          Exportar PDF
+        </button>
       </div>
 
       {/* Contenedor del reporte (centrado y con max width) */}
