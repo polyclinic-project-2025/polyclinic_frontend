@@ -1,6 +1,5 @@
-// pages/reportes/ReportDoctorSuccessRate.jsx
 import React, { useEffect, useState } from "react";
-import { BarChart3, Database, AlertCircle, X } from "lucide-react";
+import { BarChart3, Database, AlertCircle, X, Download } from "lucide-react";
 import analyticsService from "../../services/analyticsService";
 
 const ReportDoctorSuccessRate = () => {
@@ -8,10 +7,11 @@ const ReportDoctorSuccessRate = () => {
   const [doctors, setDoctors] = useState([]);
   const [error, setError] = useState(null);
   const [frequency, setFrequency] = useState(1);
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchData();
-  }, []); // carga inicial
+  }, []);
 
   const fetchData = async (freq = frequency) => {
     setLoading(true);
@@ -32,13 +32,40 @@ const ReportDoctorSuccessRate = () => {
   const handleRefresh = () => {
     const freq = Number(frequency);
 
-    if (!freq || freq <= 0) {
-      setError("La frecuencia mínima debe ser un número mayor que 0.");
-      setDoctors([]); // evita estados inválidos
+    if (!freq || !isFinite(freq) || freq <= 0 || freq > 1000000) {
+      setError("La frecuencia mínima debe ser un número mayor que 0 y menor a 1,000,000.");
+      setDoctors([]);
       return;
     }
 
     fetchData(freq);
+  };
+
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      const url = await analyticsService.getDoctorSuccessRatePdf({ frequency: frequency });
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tasa_exito_doctores_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Tasas de éxito de doctores exportadas exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar tasas de éxito de doctores';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -94,6 +121,17 @@ const ReportDoctorSuccessRate = () => {
         </div>
       </div>
 
+      <div className="flex justify-end">
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg"
+          disabled={loading}
+        >
+          <Download className="w-5 h-5" />
+          Exportar PDF
+        </button>
+      </div>
+
       {/* Contenido del Reporte */}
       <div className="bg-white rounded-xl shadow-md p-6 max-w-4xl mx-auto mb-12">
         {/* Alerts */}
@@ -116,14 +154,14 @@ const ReportDoctorSuccessRate = () => {
         
         {!loading && doctors.length === 0 && !error && (
           <div className="text-center py-12">
-            <Database className="w-16 h-16 text-indigo-300 ca-auto mb-4" />
+            <Database className="w-16 h-16 text-indigo-300 mx-auto mb-4" />
             <p className="text-gray-500 text-lg">No se encontraron doctores con la frecuencia indicada.</p>
           </div>
         )}
 
         {/* Tarjetas*/}
         {!loading && doctors.length > 0 && (
-          <div className="space-y-4 shadow-xl">
+          <div className="space-y-4">
             {doctors.map((doc, idx) => {
               const key = idx;
               const meds =
@@ -135,7 +173,7 @@ const ReportDoctorSuccessRate = () => {
               return (
                 <div
                   key={key}
-                  className="bg-white border border-gray-100 rounded-xl shadow-sm p-5 flex flex-col lg:flex-row gap-4 items-stretch max-w-4xl mx-auto"
+                  className="bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-lg transition-shadow p-5 flex flex-col lg:flex-row gap-4 items-stretch"
                 >
                   {/* Left: info principal */}
                   <div className="flex-1 min-w-0">
