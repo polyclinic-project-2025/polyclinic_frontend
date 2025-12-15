@@ -188,7 +188,29 @@ const analyticsService = {
       console.error('Error al obtener lista de pacientes:', error);
       throw error;
     }
-  }
+  },
+    // Exportar pacientes registrados a PDF
+    exportPatientsListToPdf: async (params) => {
+      try {
+        const result = await api.get('/Analytics/patients-list/pdf');
+  
+        // Decodificar Base64 y descargar
+        const byteCharacters = atob(result.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+  
+        // Crear enlace de descarga
+        const url = URL.createObjectURL(blob);
+        return url;
+      } catch (error) {
+        console.error('Error al exportar promedio mensual de atenciones', error);
+        throw error;
+      }
+    },
 };
 
 export default analyticsService;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, Users, FileText, Calendar, Phone, MapPin, User, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { BarChart3, Users, FileText, Calendar, Phone, MapPin, User, Loader2, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import analyticsService from "../../services/analyticsService";
 
 const ReportPatientsList = () => {
@@ -31,7 +31,7 @@ const ReportPatientsList = () => {
       }
 
       const normalized = payload.map((p) => ({
-        patientName: p.patientName,
+        patientFullName: p.patientFullName,
         identification: p.identification,
         age: p.age,
         contact: p.contact,
@@ -103,6 +103,28 @@ const ReportPatientsList = () => {
     return pageNumbers;
   };
 
+  // --- NUEVA FUNCIÓN: Exportar a PDF ---
+  const handleExport = async () => {
+    try {
+      // Llamar al servicio para obtener el PDF
+      const url = await analyticsService.exportPatientsListToPdf();
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pacientes_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error al exportar a PDF:', err);
+      setError("Error al generar el PDF. Por favor, intente nuevamente.");
+    }
+  };
+
   return (
     <div className="space-y-6 px-4">
       {/* Header */}
@@ -120,12 +142,24 @@ const ReportPatientsList = () => {
         </div>
       </div>
 
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-600">
-        <BarChart3 className="w-4 h-4" />
-        <span>Reportes</span>
-        <span>/</span>
-        <span className="text-purple-600 font-semibold">Listado de Pacientes</span>
+      {/* Breadcrumb + Botón de Exportación */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <BarChart3 className="w-4 h-4" />
+          <span>Reportes</span>
+          <span>/</span>
+          <span className="text-purple-600 font-semibold">Listado de Pacientes</span>
+        </div>
+
+        {/* Botón de Exportación PDF */}
+        <button
+          onClick={handleExport}
+          disabled={loading || patients.length === 0}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Download className="w-4 h-4" />
+          Exportar PDF
+        </button>
       </div>
 
       {/* Contenedor del reporte */}
@@ -222,7 +256,7 @@ const ReportPatientsList = () => {
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {patient.patientName}
+                          {patient.patientFullName}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
