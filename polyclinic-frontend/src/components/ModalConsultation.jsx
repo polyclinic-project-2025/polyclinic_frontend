@@ -9,6 +9,7 @@ import { employeeService } from "../services/employeeService.js";
 import { departmentHeadService } from "../services/departmentHeadService";
 import { userService } from "../services/userService";
 import { useAuth } from "../context/AuthContext";
+import { formatDateTimeForBackend } from "../utils/dateUtils";
 
 const ModalConsultation = ({
   isOpen,
@@ -52,7 +53,6 @@ const ModalConsultation = ({
           const departmentId = head.departmentId;
           console.log(departmentId + " is departmentId");
           
-
           departmentData = 
           {
             departmentId: departmentId,
@@ -89,7 +89,7 @@ const ModalConsultation = ({
           doctor: doctorData,
           diagnostic: selected.diagnosis,
         };
-        
+        console.log(editFormData.deparmentId + " editFormData");
         
         setFormData(editFormData);
       } else if (isOpen && modalMode === "create" && user?.id) {
@@ -183,7 +183,7 @@ const ModalConsultation = ({
       const dataToSend = {
         referralId: formData.patientId,
         doctorId: formData.doctorId,
-        dateTimeCRem: new Date(formData.dateTime).toISOString(),
+        dateTimeCRem: formatDateTimeForBackend(new Date(formData.dateTime)),
         departmentHeadId: departmentHeadId,
         diagnosis: formData.diagnostic.trim(),
       };
@@ -283,6 +283,12 @@ const ModalConsultation = ({
               label="Paciente"
               placeholder="Selecciona un paciente"
               required={true}
+              filterParams={formData.departmentId}
+              filterData={(data) => {
+                // Filtrar solo pacientes remitidos al departamento actual
+                if (!formData.departmentId) return data;
+                return data.filter(item => item.departmentToId === formData.departmentId);
+              }}
               getItemId={(item) => item?.referralId || item?.id}
               getDisplayText={(item) => item?.patientName || item?.name || ''}
               getSearchableText={(item) => {

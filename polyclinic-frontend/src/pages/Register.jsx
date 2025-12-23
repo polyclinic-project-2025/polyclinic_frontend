@@ -12,7 +12,7 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "Patient",
+    role: "Paciente",
     phoneNumber: null,
     validation: {
       IdentificationNumber: "",
@@ -22,10 +22,10 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
 
   const roles = [
-    { value: "Patient", label: "Paciente" },
+    { value: "Paciente", label: "Paciente" },
     { value: "Doctor", label: "Doctor" },
-    { value: "Nurse", label: "Enfermero/a" },
-    { value: "MedicalStaff", label: "Personal Médico" },
+    { value: "Enfermero/a", label: "Enfermero/a" },
+    { value: "Jefe de Almacén", label: "Jefe de Almacén" },
   ];
 
   const handleChange = (e) => {
@@ -125,7 +125,7 @@ const Register = () => {
             <UserPlus className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Crear Cuenta</h1>
-          <p className="text-gray-600 mt-2">Regístrate en Polyclinic</p>
+          <p className="text-gray-600 mt-2">Regístrate en MatComCare Pro</p>
         </div>
 
         {/* Alert */}

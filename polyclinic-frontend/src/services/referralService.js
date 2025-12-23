@@ -6,98 +6,89 @@ export const referralService = {
   /** Obtener todos los remitidos */
   getAll: async () => {
     try {
-      const response = await api.get('/Referral');
-      return response.data;
+      const data = await api.get('/Referral');
+      return data;
     } catch (error) {
-      const msg = error.response?.data?.errorMessage || 'Error al obtener remitidos';
-      throw new Error(msg);
+      throw new Error(error.message || 'Error al obtener remitidos');
     }
   },
 
   /** Obtener remitido por ID */
   getById: async (id) => {
     try {
-      const response = await api.get('/Referral/${id}');
-      return response.data;
+      const data = await api.get(`/Referral/${id}`);
+      return data;
     } catch (error) {
-      const msg = error.response?.data?.errorMessage || 'Error al obtener remitido';
-      throw new Error(msg);
+      throw new Error(error.message || 'Error al obtener remitido');
     }
   },
 
   /** Buscar por puesto externo */
   searchByPuestoExterno: async (name) => {
     try {
-      const response = await api.get('/Referral/search/from?name=${name}');
-      return response.data;
+      const data = await api.get(`/Referral/search/from?name=${name}`);
+      return data;
     } catch (error) {
-      const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por puesto externo';
-      throw new Error(msg);
+      throw new Error(error.message || 'Error al buscar remitidos por puesto externo');
     }
   },
 
   /** Buscar por departamento destino */
   searchByDepartmentTo: async (name) => {
     try {
-      const response = await api.get('/Referral/search/to?name=${name}');
-      return response.data;
+      const data = await api.get(`/Referral/search/to?name=${name}`);
+      return data;
     } catch (error) {
-      const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por dpto destino';
-      throw new Error(msg);
+      throw new Error(error.message || 'Error al buscar remitidos por dpto destino');
     }
   },
 
   /** Buscar por nombre de paciente */
   searchByPatientName: async (name) => {
     try {
-      const response = await api.get('/Referral/search/patient?name=${name}');
-      return response.data;
+      const data = await api.get(`/Referral/search/patient?name=${name}`);
+      return data;
     } catch (error) {
-      const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por paciente';
-      throw new Error(msg);
+      throw new Error(error.message || 'Error al buscar remitidos por paciente');
     }
   },
 
   /** Buscar por identificación */
   searchByIdentification: async (identification) => {
     try {
-      const response = await api.get('/Referral/search/identification?identification=${identification}');
-      return response.data;
+      const data = await api.get(`/Referral/search/identification?identification=${identification}`);
+      return data;
     } catch (error) {
-      const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por identificación';
-      throw new Error(msg);
+      throw new Error(error.message || 'Error al buscar remitidos por identificación');
     }
   },
 
   /** Buscar por fecha */
   searchByDate: async (date) => {
     try {
-      const response = await api.get('/Referral/search/date?date=${date}');
-      return response.data;
+      const data = await api.get(`/Referral/search/date?date=${date}`);
+      return data;
     } catch (error) {
-      const msg = error.response?.data?.errorMessage || 'Error al buscar remitidos por fecha';
-      throw new Error(msg);
+      throw new Error(error.message || 'Error al buscar remitidos por fecha');
     }
   },
 
   /** Crear remitido */
   create: async (data) => {
     try {
-      const response = await api.post('/Referral', data);
-      return response.data;
+      const result = await api.post('/Referral', data);
+      return result;
     } catch (error) {
-      const msg = error.response?.data?.errorMessage || 'Error al crear remitido';
-      throw new Error(msg);
+      throw new Error(error.message || 'Error al crear remitido');
     }
   },
 
   /** Eliminar remitido */
   delete: async (id) => {
     try {
-      await api.delete('/Referral/${id}');
+      await api.delete(`/Referral/${id}`);
     } catch (error) {
-      const msg = error.response?.data?.errorMessage || 'Error al eliminar remitido';
-      throw new Error(msg);
+      throw new Error(error.message || 'Error al eliminar remitido');
     }
   },
 };

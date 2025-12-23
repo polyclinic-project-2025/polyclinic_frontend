@@ -1,33 +1,39 @@
 // pages/Departments.jsx
 import React, { useState, useEffect } from 'react';
 import {
-  Building2, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, UserCog, User
+  Building2, Plus, SquarePen, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, UserCog, User, Download, Package
 } from 'lucide-react';
 import { departmentService } from '../services/departmentService';
 import { departmentHeadService } from '../services/departmentHeadService';
 import { employeeService } from '../services/employeeService';
 import { useAuth } from '../context/AuthContext';
 import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
+import Pagination from '../components/Pagination';
+import ModalDepartmentStock from '../components/ModalDepartmentStock';
 
 const Departments = () => {
   const { hasRole } = useAuth();
   const { can, isAdmin } = usePermissions();
   const [departments, setDepartments] = useState([]);
-  const [allDoctors, setAllDoctors] = useState([]); // Todos los doctores del sistema
-  const [departmentHeads, setDepartmentHeads] = useState({}); // { departmentId: headInfo }
+  const [allDoctors, setAllDoctors] = useState([]);
+  const [departmentHeads, setDepartmentHeads] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showHeadModal, setShowHeadModal] = useState(false);
+  const [showStockModal, setShowStockModal] = useState(false);
   const [modalMode, setModalMode] = useState('create');
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [formData, setFormData] = useState({ name: '' });
-  const [doctors, setDoctors] = useState([]); // Doctores del departamento seleccionado
+  const [doctors, setDoctors] = useState([]);
   const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     loadInitialData();
@@ -36,7 +42,6 @@ const Departments = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      // Cargar departamentos y doctores en paralelo
       const [departmentsData, doctorsData] = await Promise.all([
         departmentService.getAll(),
         employeeService.getAllByType('doctor')
@@ -45,7 +50,6 @@ const Departments = () => {
       setDepartments(departmentsData);
       setAllDoctors(doctorsData);
       
-      // Cargar jefes de cada departamento
       await loadDepartmentHeads(departmentsData);
     } catch (err) {
       const errorMessage = err.message || 'Error al cargar datos';
@@ -58,14 +62,12 @@ const Departments = () => {
   const loadDepartmentHeads = async (departmentsList) => {
     const headsMap = {};
     
-    // Intentar obtener el jefe de cada departamento
     await Promise.all(
       departmentsList.map(async (dept) => {
         try {
           const headInfo = await departmentHeadService.getByDepartmentId(dept.departmentId);
           headsMap[dept.departmentId] = headInfo;
         } catch (err) {
-          // Si no hay jefe asignado, el endpoint retorna 404, lo cual es normal
           headsMap[dept.departmentId] = null;
         }
       })
@@ -88,12 +90,10 @@ const Departments = () => {
     }
   };
 
-  // Obtener nombre del jefe de departamento
   const getDepartmentHeadName = (departmentId) => {
     const headInfo = departmentHeads[departmentId];
     if (!headInfo) return 'Jefe no asignado';
     
-    // Buscar el doctor en la lista de todos los doctores
     const doctor = allDoctors.find(d => d.employeeId === headInfo.doctorId);
     return doctor ? doctor.name : 'Jefe no asignado';
   };
@@ -141,6 +141,11 @@ const Departments = () => {
     await loadDoctorsByDepartment(department.departmentId);
     setShowHeadModal(true);
     setError('');
+  };
+
+  const handleViewStock = (department) => {
+    setSelectedDepartment(department);
+    setShowStockModal(true);
   };
 
   const handleDelete = async (id, name) => {
@@ -215,9 +220,50 @@ const Departments = () => {
     }
   };
 
+  const handleExportDepartments = async () => {
+    if (!can('canExportDepartments')) {
+      setError('No tienes permisos para exportar departamentos');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const url = await departmentService.exportToPdf();
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `departamentos_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Departamentos exportados exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar departamentos';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredDepartments = departments.filter((dept) =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+  
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedDepartments = filteredDepartments.slice(startIndex, endIndex);
+  
+  const totalPages = Math.ceil(filteredDepartments.length / ITEMS_PER_PAGE);
 
   const filteredDoctors = doctors.filter((doc) =>
     doc.name.toLowerCase().includes(doctorSearchTerm.toLowerCase()) ||
@@ -246,15 +292,28 @@ const Departments = () => {
           </p>
         </div>
         
-        <ProtectedComponent requiredPermission="canCreateDepartments">
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
-          >
-            <Plus className="w-5 h-5" />
-            Nuevo Departamento
-          </button>
-        </ProtectedComponent>
+        <div className="flex gap-3">
+          <ProtectedComponent requiredPermission="canExportDepartments">
+            <button
+              onClick={handleExportDepartments}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-lg"
+              disabled={loading}
+            >
+              <Download className="w-5 h-5" />
+              Exportar PDF
+            </button>
+          </ProtectedComponent>
+          
+          <ProtectedComponent requiredPermission="canCreateDepartments">
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              Nuevo Departamento
+            </button>
+          </ProtectedComponent>
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -301,7 +360,7 @@ const Departments = () => {
 
       {/* Departments Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredDepartments.map((department) => (
+        {paginatedDepartments.map((department) => (
           <div
             key={department.departmentId}
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
@@ -318,50 +377,72 @@ const Departments = () => {
                 </div>
               </div>
               
-              {/* Botones de Acción */}
-              <div className="flex gap-2">
-                <ProtectedComponent requiredPermission="canEditDepartments">
-                  <button
-                    onClick={() => handleAssignHead(department)}
-                    className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
-                    title="Asignar Jefe de Departamento"
-                  >
-                    <UserCog className="w-4 h-4" />
-                  </button>
-                </ProtectedComponent>
-
-                <ProtectedComponent requiredPermission="canEditDepartments">
-                  <button
-                    onClick={() => handleEdit(department)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                    title="Editar"
-                  >
-                    <SquarePen className="w-4 h-4 text-cyan-600"/> 
-                  </button>
-                </ProtectedComponent>
-                
-                <ProtectedComponent requiredPermission="canDeleteDepartments">
-                  <button
-                    onClick={() => handleDelete(department.departmentId, department.name)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </ProtectedComponent>
-              </div>
+              {/* Botón Stock en esquina superior derecha */}
+              <ProtectedComponent requiredPermission="canViewDepartmentStock">
+                <button
+                  onClick={() => handleViewStock(department)}
+                  className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
+                  title="Ver Stock"
+                >
+                  <Package className="w-5 h-5" />
+                </button>
+              </ProtectedComponent>
             </div>
             
             {/* Información del Jefe de Departamento */}
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-sm mb-4">
               <p className="text-sm text-gray-600 flex items-center gap-1">
                 <User className="w-4 h-4" />
                 <span> {getDepartmentHeadName(department.departmentId)} </span>
               </p>
             </div>
+            
+            {/* Botones de Acción */}
+            <div className="flex gap-2 justify-end border-t pt-4">
+              <ProtectedComponent requiredPermission="canEditDepartments">
+                <button
+                  onClick={() => handleAssignHead(department)}
+                  className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                  title="Asignar Jefe de Departamento"
+                >
+                  <UserCog className="w-4 h-4" />
+                </button>
+              </ProtectedComponent>
+
+              <ProtectedComponent requiredPermission="canEditDepartments">
+                <button
+                  onClick={() => handleEdit(department)}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                  title="Editar"
+                >
+                  <SquarePen className="w-4 h-4 text-cyan-600"/> 
+                </button>
+              </ProtectedComponent>
+              
+              <ProtectedComponent requiredPermission="canDeleteDepartments">
+                <button
+                  onClick={() => handleDelete(department.departmentId, department.name)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                  title="Eliminar"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </ProtectedComponent>
+            </div>
           </div>
         ))}
       </div>
+      
+      {/* Paginación */}
+      {filteredDepartments.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredDepartments.length}
+        />
+      )}
 
       {filteredDepartments.length === 0 && (
         <div className="text-center py-12">
@@ -548,6 +629,17 @@ const Departments = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal Stock Department */}
+      {showStockModal && (
+        <ModalDepartmentStock
+          department={selectedDepartment}
+          onClose={() => setShowStockModal(false)}
+          onSuccess={() => {
+            loadDepartments();
+          }}
+        />
       )}
     </div>
   );

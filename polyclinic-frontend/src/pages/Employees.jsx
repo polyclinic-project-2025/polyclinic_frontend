@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePermissions } from '../middleware/PermissionMiddleware';
 import { employeeService } from '../services/employeeService';
 import { departmentService } from '../services/departmentService';
+import Pagination from '../components/Pagination';
 
 const Employees = ({ type }) => {
   const { hasRole } = useAuth();
@@ -29,6 +30,10 @@ const Employees = ({ type }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   // Configuración según el tipo (doctor/nurse)
   const config = {
@@ -199,6 +204,19 @@ const Employees = ({ type }) => {
     emp.identification.toLowerCase().includes(searchTerm.toLowerCase()) ||
     emp.employmentStatus.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  // Resetear a página 1 cuando cambie searchTerm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+  
+  // Calcular items para la página actual
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
+  
+  // Calcular total de páginas
+  const totalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -277,7 +295,7 @@ const Employees = ({ type }) => {
 
       {/* Employees Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEmployees.map((employee) => (
+        {paginatedEmployees.map((employee) => (
           <div
             key={employee.employeeId}
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
@@ -337,6 +355,17 @@ const Employees = ({ type }) => {
           </div>
         ))}
       </div>
+      
+      {/* Paginación */}
+      {filteredEmployees.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredEmployees.length}
+        />
+      )}
 
       {filteredEmployees.length === 0 && (
         <div className="text-center py-12">
@@ -381,7 +410,7 @@ const Employees = ({ type }) => {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                    placeholder="Yosvanis Arismin Sierra Hernández"
+                    placeholder="Ej: Yosvanis Arismin Sierra Hernández"
                   />
                 </div>
 
@@ -395,7 +424,7 @@ const Employees = ({ type }) => {
                     value={formData.identification}
                     onChange={(e) => setFormData({ ...formData, identification: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                    placeholder="91021772067"
+                    placeholder="Ej: 91021772067"
                   />
                 </div>
               </div>

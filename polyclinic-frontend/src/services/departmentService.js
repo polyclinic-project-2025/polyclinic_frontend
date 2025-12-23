@@ -8,11 +8,10 @@ export const departmentService = {
    */
   getAll: async () => {
     try {
-      const response = await api.get('/Departments');
-      return response.data;
+      const data = await api.get('/Departments');
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener departamentos';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener departamentos');
     }
   },
 
@@ -23,12 +22,11 @@ export const departmentService = {
    */
   getById: async (id) => {
     try {
-      const response = await api.get(`/Departments/${id}`);
-      return response.data;
+      const data = await api.get(`/Departments/${id}`);
+      return data;
     } catch (error) {
       console.error('Error al obtener departamento:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener departamento');
     }
   },
 
@@ -39,12 +37,11 @@ export const departmentService = {
    */
   getDoctorsByDepartment: async (departmentId) => {
     try {
-      const response = await api.get(`/Departments/${departmentId}/doctors`);
-      return response.data;
+      const data = await api.get(`/Departments/${departmentId}/doctors`);
+      return data;
     } catch (error) {
       console.error('Error al obtener doctores del departamento:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener doctores del departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener doctores del departamento');
     }
   },
 
@@ -55,12 +52,11 @@ export const departmentService = {
    */
   create: async (departmentData) => {
     try {
-      const response = await api.post('/Departments', departmentData);
-      return response.data;
+      const data = await api.post('/Departments', departmentData);
+      return data;
     } catch (error) {
       console.error('Error al crear departamento:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al crear departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al crear departamento');
     }
   },
 
@@ -75,8 +71,7 @@ export const departmentService = {
       await api.put(`/Departments/${id}`, departmentData);
     } catch (error) {
       console.error('Error al actualizar departamento:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al actualizar departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al actualizar departamento');
     }
   },
 
@@ -89,8 +84,32 @@ export const departmentService = {
     try {
       await api.delete(`/Departments/${id}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al eliminar departamento';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al eliminar departamento');
+    }
+  },
+
+  /**
+   * Exporta departamentos a PDF
+   * @returns {Promise<string>} - URL de descarga del PDF
+   */
+  exportToPdf: async () => {
+    try {
+      const result = await api.get('/Departments/export');
+
+      // Decodificar Base64 y descargar
+      const byteCharacters = atob(result.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      // Crear enlace de descarga
+      const url = URL.createObjectURL(blob);
+      return url;
+    } catch (error) {
+      throw new Error(error.message || 'Error al exportar departamentos');
     }
   },
 };

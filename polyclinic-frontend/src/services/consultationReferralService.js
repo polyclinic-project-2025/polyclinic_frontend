@@ -8,11 +8,10 @@ export const consultationReferralService = {
    */
   getAll: async () => {
     try {
-      const response = await api.get('/ConsultationReferral');
-      return response.data;
+      const data = await api.get('/ConsultationReferral');
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener consultas';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener consultas');
     }
   },
 
@@ -22,11 +21,10 @@ export const consultationReferralService = {
    */
   getLastTen: async () => {
     try {
-      const response = await api.get('/ConsultationReferral/recent');
-      return response.data;
+      const data = await api.get('/ConsultationReferral/recent');
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener consultas';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener consultas');
     }
   },
 
@@ -36,11 +34,10 @@ export const consultationReferralService = {
    */
   inRange: async (start, end) => {
     try {
-      const response = await api.get(`/ConsultationReferral/in-range?start=${start}&end=${end}`);
-      return response.data;
+      const data = await api.get(`/ConsultationReferral/in-range?start=${start}&end=${end}`);
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener consultas';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener consultas');
     }
   },
 
@@ -51,12 +48,10 @@ export const consultationReferralService = {
    */
   getById: async (id) => {
     try {
-      const response = await api.get(`/ConsultationReferral/${id}`);
-      return response.data;
+      const data = await api.get(`/ConsultationReferral/${id}`);
+      return data;
     } catch (error) {
-      console.error('Error al obtener consulta:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al obtener consulta';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al obtener consulta');
     }
   },
 
@@ -72,13 +67,13 @@ export const consultationReferralService = {
    * @returns {Promise<Object>}
    */
   create: async (consultationData) => {
-    try { 
-      const response = await api.post('/ConsultationReferral', consultationData);
-      return response.data;
+    try {
+      console.log('📅 [consultationReferralService.create] dateTimeCRe enviado:', consultationData.dateTimeCRe);
+      console.log('📋 [consultationReferralService.create] Datos completos:', consultationData);
+      const result = await api.post('/ConsultationReferral', consultationData);
+      return result;
     } catch (error) {
-      console.error('Error al crear consulta:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al crear consulta';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al crear consulta');
     }
   },
 
@@ -99,8 +94,7 @@ export const consultationReferralService = {
       await api.put(`/ConsultationReferral/${id}`, consultationData);
     } catch (error) {
       console.error('Error al actualizar consulta:', error);
-      const errorMessage = error.response?.data?.errorMessage || 'Error al actualizar consulta';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al actualizar consulta');
     }
   },
 
@@ -113,8 +107,32 @@ export const consultationReferralService = {
     try {
       await api.delete(`/ConsultationReferral/${id}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.errorMessage || 'Error al eliminar consulta';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al eliminar consulta');
+    }
+  },
+
+  /**
+   * Exporta consultas a PDF
+   * @returns {Promise<string>} - URL de descarga del PDF
+   */
+  exportToPdf: async () => {
+    try {
+      const result = await api.get('/ConsultationReferral/export');
+
+      // Decodificar Base64 y descargar
+      const byteCharacters = atob(result.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      // Crear enlace de descarga
+      const url = URL.createObjectURL(blob);
+      return url;
+    } catch (error) {
+      throw new Error(error.message || 'Error al exportar consultas');
     }
   },
 };

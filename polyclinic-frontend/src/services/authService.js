@@ -8,15 +8,13 @@ export const authService = {
   register: async (userData) => {
     try {
       console.log('authService.register - Enviando:', userData);
-      const response = await api.post('/Auth/register', userData);
-      console.log('authService.register - Respuesta:', response.data);
-      return response.data;
+      const data = await api.post('/Auth/register', userData);
+      console.log('authService.register - Respuesta:', data);
+      return data;
     } catch (error) {
       console.error('authService.register - Error:', error);
       console.error('authService.register - Error response:', error.response?.data);
-      
-      const errorMessage = error.response?.data || 'Error al registrar usuario';
-      throw new Error(errorMessage);
+      throw new Error(error.message || 'Error al registrar usuario');
     }
   },
 
@@ -26,14 +24,14 @@ export const authService = {
   login: async (credentials) => {
     try {
       console.log('authService.login - Enviando:', { email: credentials.email, password: '***' });
-      const response = await api.post('/Auth/login', credentials);
-      console.log('authService.login - Respuesta exitosa:', response.data);
-      console.log(response.data);
-      return response.data;
+      const data = await api.post('/Auth/login', credentials);
+      console.log('authService.login - Respuesta exitosa:', data);
+      return data;
     } catch (error) {
-      const errorMessage = error.response?.data || 'Error al iniciar sesión';
-      console.error("error service",errorMessage)
-      throw new Error(errorMessage);}
+      const errorMessage = error.message || 'Error al iniciar sesión';
+      console.error("error service", errorMessage);
+      throw new Error(errorMessage);
+    }
   },
 
   /**

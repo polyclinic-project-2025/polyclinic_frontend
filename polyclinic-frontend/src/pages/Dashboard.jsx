@@ -7,11 +7,35 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { usePermissions, filterModulesByPermission } from "../middleware/PermissionMiddleware";
+import { warehouseManagerService } from "../services/warehouseManagerService";
+import { userService } from "../services/userService";
+import { patientService } from "../services/patientService";
+import { departmentService } from "../services/departmentService";
+import medicationService from "../services/medicationService";
+import { employeeService } from "../services/employeeService";
+import { consultationReferralService } from "../services/consultationReferralService";
+import { consultationDerivationService } from "../services/consultationDerivationService";
+import { emergencyRoomCareService } from "../services/emergencyRoomCareService";
+import analyticsService from "../services/analyticsService";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import Departments from "./Departments";
+import Warehouse from "./Warehouse";
 import UsersView from "./UsersView";
 import ModalSettings from "../components/ModalSettings";
 import ConsultationsReferral from "./ConsultationsReferral";
+import ConsultationsDerivation from "./ConsultationsDerivation";
 import Employees from "./Employees";
+import Medications from "./Medications";
+import Patients from "./Patients";
+import ReportPatientsList from "./reports/ReportPatientsList";
+import ReportDoctorMonthlyAverage from "./reports/ReportDoctorMonthlyAverage";
+import ReporteDateRange from "./reports/ReporteDateRange";
+import ReporteLast10 from "./reports/ReporteLast10";
+import ReporteFuncion5 from "./reports/ReporteFuncion5";
+import ReportWarehouseRequestsDenied from "./reports/ReportWarehouseRequestsDenied";
+import ReportDoctorSuccessRate from "./reports/ReportDoctorSuccessRate";
+import EmergencyGuard from "./EmergencyGuard";
+import EmergencyCare from "./EmergencyCare";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +48,32 @@ const Dashboard = () => {
   const [showModalSettings, setShowModalSettings] = useState(false);
   const [selectedMode, setSelectedMode] = useState(null);
   const [activeItem, setActiveItem] = useState(null);
+  const [currentWarehouseManager, setCurrentWarehouseManager] = useState(null);
+  const [isCurrentWarehouseManager, setIsCurrentWarehouseManager] = useState(false);
+  const [loadingWarehouseManager, setLoadingWarehouseManager] = useState(true);
+
+  // Estados para las estadísticas del dashboard
+  const [dashboardStats, setDashboardStats] = useState({
+    patients: 0,
+    departments: 0,
+    medications: 0,
+    doctors: 0,
+    nurses: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  // Estados para estadísticas de hoy
+  const [todayStats, setTodayStats] = useState({
+    consultationsReferral: 0,
+    consultationsDerivation: 0,
+    emergencies: 0
+  });
+  const [loadingTodayStats, setLoadingTodayStats] = useState(true);
+
+  // Estados para gráficos
+  const [consultationsByDept, setConsultationsByDept] = useState([]);
+  const [attendanceTrend, setAttendanceTrend] = useState([]);
+  const [loadingCharts, setLoadingCharts] = useState(true);
 
   // Detectar navegación desde ModalSettings
   useEffect(() => {
@@ -47,6 +97,192 @@ const Dashboard = () => {
     }
   }, [location.pathname, location.search]);
 
+  // Cargar estadísticas del dashboard
+  useEffect(() => {
+    const loadDashboardStats = async () => {
+      try {
+        setLoadingStats(true);
+        const [patients, departments, medications, doctors, nurses] = await Promise.all([
+          patientService.getAll().catch(() => []),
+          departmentService.getAll().catch(() => []),
+          medicationService.getAll().catch(() => []),
+          employeeService.getAllByType('doctor').catch(() => []),
+          employeeService.getAllByType('nurse').catch(() => [])
+        ]);
+
+        setDashboardStats({
+          patients: Array.isArray(patients) ? patients.length : 0,
+          departments: Array.isArray(departments) ? departments.length : 0,
+          medications: Array.isArray(medications) ? medications.length : 0,
+          doctors: Array.isArray(doctors) ? doctors.length : 0,
+          nurses: Array.isArray(nurses) ? nurses.length : 0
+        });
+      } catch (error) {
+        console.error('Error cargando estadísticas del dashboard:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    loadDashboardStats();
+  }, []);
+
+  // Cargar estadísticas de hoy
+  useEffect(() => {
+    const loadTodayStats = async () => {
+      try {
+        setLoadingTodayStats(true);
+        const today = new Date();
+        const todayISO = today.toISOString().split('T')[0]; // "2025-12-15"
+        
+        const [allReferrals, allDerivations, emergenciesToday] = await Promise.all([
+          consultationReferralService.getAll().catch(() => []),
+          consultationDerivationService.getAll().catch(() => []),
+          emergencyRoomCareService.getByDate(todayISO).catch(() => [])
+        ]);
+
+        // Usar la misma lógica que el gráfico de tendencia (que sí funciona)
+        const referralsToday = Array.isArray(allReferrals) 
+          ? allReferrals.filter(c => c.dateTimeCRem?.startsWith(todayISO)).length 
+          : 0;
+        const derivationsToday = Array.isArray(allDerivations) 
+          ? allDerivations.filter(c => c.dateTimeCDer?.startsWith(todayISO)).length 
+          : 0;
+
+        console.log('Today ISO:', todayISO);
+        console.log('Referrals hoy:', referralsToday);
+        console.log('Derivations hoy:', derivationsToday);
+
+        setTodayStats({
+          consultationsReferral: referralsToday,
+          consultationsDerivation: derivationsToday,
+          emergencies: Array.isArray(emergenciesToday) ? emergenciesToday.length : 0
+        });
+      } catch (error) {
+        console.error('Error cargando estadísticas de hoy:', error);
+      } finally {
+        setLoadingTodayStats(false);
+      }
+    };
+
+    loadTodayStats();
+  }, []);
+
+  // Cargar datos para gráficos
+  useEffect(() => {
+    const loadChartData = async () => {
+      try {
+        setLoadingCharts(true);
+        
+        const [allReferrals, allDerivations] = await Promise.all([
+          consultationReferralService.getAll().catch(() => []),
+          consultationDerivationService.getAll().catch(() => [])
+        ]);
+
+        console.log('Referrals cargados:', allReferrals);
+        console.log('Derivations cargados:', allDerivations);
+
+        // Procesar consultas por departamento usando departmentName y departmentToName
+        const deptMap = {};
+        
+        if (Array.isArray(allReferrals)) {
+          allReferrals.forEach(c => {
+            const deptName = c.departmentName;
+            if (deptName) {
+              if (!deptMap[deptName]) {
+                deptMap[deptName] = { name: deptName, referrals: 0, derivations: 0 };
+              }
+              deptMap[deptName].referrals++;
+            }
+          });
+        }
+
+        if (Array.isArray(allDerivations)) {
+          allDerivations.forEach(c => {
+            const deptName = c.departmentToName;
+            if (deptName) {
+              if (!deptMap[deptName]) {
+                deptMap[deptName] = { name: deptName, referrals: 0, derivations: 0 };
+              }
+              deptMap[deptName].derivations++;
+            }
+          });
+        }
+
+        const chartData = Object.values(deptMap)
+          .map(d => ({ name: d.name, remisiones: d.referrals, derivaciones: d.derivations }))
+          .filter(d => d.remisiones > 0 || d.derivaciones > 0)
+          .sort((a, b) => (b.remisiones + b.derivaciones) - (a.remisiones + a.derivaciones))
+          .slice(0, 6);
+        
+        console.log('Chart data por departamento:', chartData);
+        setConsultationsByDept(chartData);
+
+        // Procesar tendencia de atenciones (últimos 7 días) usando dateTimeCRem y dateTimeCDer
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+          const dayName = date.toLocaleDateString('es-ES', { weekday: 'short' });
+          
+          const referralsCount = Array.isArray(allReferrals) 
+            ? allReferrals.filter(c => c.dateTimeCRem?.startsWith(dateStr)).length 
+            : 0;
+          const derivationsCount = Array.isArray(allDerivations) 
+            ? allDerivations.filter(c => c.dateTimeCDer?.startsWith(dateStr)).length 
+            : 0;
+          
+          last7Days.push({
+            dia: dayName.charAt(0).toUpperCase() + dayName.slice(1),
+            remisiones: referralsCount,
+            derivaciones: derivationsCount,
+            total: referralsCount + derivationsCount
+          });
+        }
+        console.log('Tendencia últimos 7 días:', last7Days);
+        setAttendanceTrend(last7Days);
+
+      } catch (error) {
+        console.error('Error cargando datos de gráficos:', error);
+      } finally {
+        setLoadingCharts(false);
+      }
+    };
+
+    loadChartData();
+  }, []);
+
+  // Verificar si el usuario es el jefe de almacén actual
+  useEffect(() => {
+    const verifyCurrentWarehouseManager = async () => {
+      try {
+        setLoadingWarehouseManager(true);
+        
+        const manager = await warehouseManagerService.getCurrent();
+        setCurrentWarehouseManager(manager);
+
+        if (user?.roles?.includes('Jefe de Almacén')) {
+          const profile = await userService.getProfile(user.id);
+          const userEmployeeId = profile.profile?.employeeId;
+          
+          setIsCurrentWarehouseManager(userEmployeeId === manager?.employeeId);
+        } else {
+          setIsCurrentWarehouseManager(false);
+        }
+      } catch (err) {
+        console.warn('Error verificando jefe de almacén actual:', err);
+        setCurrentWarehouseManager(null);
+        setIsCurrentWarehouseManager(false);
+      } finally {
+        setLoadingWarehouseManager(false);
+      }
+    };
+
+    if (user?.id) {
+      verifyCurrentWarehouseManager();
+    }
+  }, [user?.id, user?.roles]);
 
   const handleLogout = () => {
     logout();
@@ -54,11 +290,12 @@ const Dashboard = () => {
   };
 
   const roleTranslations = {
-    Patient: "Paciente",
+    Paciente: "Paciente",
     Doctor: "Doctor",
-    Nurse: "Enfermero/a",
-    MedicalStaff: "Personal Médico",
-    Admin: "Administrador",
+    "Enfermero/a": "Enfermero/a",
+    "Jefe de Almacén": "Jefe de Almacén",
+    Admin: "Admin",
+    "Jefe de Departamento": "Jefe de Departamento",
   };
 
   const slides = [
@@ -136,16 +373,33 @@ const Dashboard = () => {
         { id: "nurse", name: "Enfermeros" }
       ]
     },
+    {
+      id: "reports",
+      modes: [
+        { id: "patients-list", name: "Listado de Pacientes" },
+        { id: "doctor-monthly-average", name: "Rendimiento mensual de doctores" },
+        { id: "daterange", name: "Consultas por Rango de Fechas" },
+        { id: "last10", name: "Últimas 10 Consultas" },
+        { id: "funcion5", name: "Consumo Acumulado de Medicamentos" },
+        { id: "warehouse-requests-denied", name: "Solicitudes de almacén denegadas" },
+        { id: "doctor-success-rate", name: "Tasa de éxito de prescripciones" }
+      ]
+    },
+    {
+      id: "emergency",
+      modes: [
+        { id: "guard", name: "Guardias" },
+        { id: "care", name: "Atenciones" }
+      ]
+    },
   ];
 
   const handleItemClick = (itemId) => {
     const hasSubmenu = menuItems.find(item => item.id === itemId);
     
     if (hasSubmenu) {
-      // Si tiene submenú, solo abre/cierra el submenú sin cambiar el módulo activo
       setActiveItem(activeItem === itemId ? null : itemId);
     } else {
-      // Si no tiene submenú, cambia el módulo normalmente
       setActiveModule(itemId);
       setSelectedMode(null);
       setActiveItem(null);
@@ -180,7 +434,13 @@ const Dashboard = () => {
     };
   }, [activeItem]);
 
-  const modules = filterModulesByPermission(allModules, user?.roles || []);
+  // Filtrar módulos
+  const modules = filterModulesByPermission(allModules, user?.roles || []).filter(module => {
+    if (module.id === 'warehouse' && user?.roles?.includes('Jefe de Almacén') && !isCurrentWarehouseManager) {
+      return false;
+    }
+    return true;
+  });
 
   const renderContent = () => {
     if (!canAccess(activeModule)) {
@@ -209,9 +469,63 @@ const Dashboard = () => {
         return <Employees type={mode.id} />;
       }
 
+      if (selectedMode.itemId === 'reports') {
+        switch (mode.id) {
+          case "patients-list":
+            return <ReportPatientsList />;
+          case "doctor-monthly-average":
+            return <ReportDoctorMonthlyAverage />;
+          case "daterange":
+            return <ReporteDateRange />;
+          case "last10":
+            return <ReporteLast10 />;
+          case "funcion5":
+            return <ReporteFuncion5 />;
+          case "warehouse-requests-denied":
+            return <ReportWarehouseRequestsDenied />;
+          case "doctor-success-rate":
+            return <ReportDoctorSuccessRate />;
+          default:
+            return (
+              <div className="text-center py-12">
+                <BarChart3 className="w-16 h-16 text-cyan-600 mx-auto mb-4" />
+                <p className="text-gray-700 text-lg font-semibold">
+                  Reporte no encontrado
+                </p>
+              </div>
+            );
+        }
+      }
+      if (selectedMode.itemId === 'emergency') {
+        switch (mode.id) {
+          case "guard":
+            return <EmergencyGuard />;
+          case "care":
+            return <EmergencyCare />;
+          default:
+            return (
+              <div className="text-center py-12">
+                <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-6 max-w-md mx-auto">
+                  <AlertCircle className="w-16 h-16 text-cyan-600 mx-auto mb-4" />
+                  <p className="text-gray-700 text-lg font-semibold mb-2">
+                    {module.name}
+                  </p>
+                  <p className="text-cyan-700 text-xl font-bold">
+                    Modo: {mode.name}
+                  </p>
+                </div>
+              </div>
+            );
+        }
+      }
+
       switch (mode.id) {
         case "referral":
           return <ConsultationsReferral />;
+        
+        case "derivation":
+          return <ConsultationsDerivation  />;
+
         default:
           return (
           <div className="text-center py-12">
@@ -228,7 +542,7 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
-        );
+        )
       }
     }
 
@@ -238,12 +552,7 @@ const Dashboard = () => {
       case "departments":
         return <Departments />;
       case "patients":
-        return (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Pacientes en desarrollo</p>
-          </div>
-        );
+        return <Patients />;
       case "consultations":
         if (!selectedMode || selectedMode.itemId !== "consultations") {
           return (
@@ -255,13 +564,6 @@ const Dashboard = () => {
           );
         }
         break;
-      case "emergency":
-        return (
-          <div className="text-center py-12">
-            <Pill className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Cuerpo de Guardia en desarrollo</p>
-          </div>
-        );
       case "staff":
         return (
           <div className="text-center py-12">
@@ -270,26 +572,20 @@ const Dashboard = () => {
           </div>
         );
       case "medications":
-        return (
-          <div className="text-center py-12">
-            <Pill className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Medicamentos en desarrollo</p>
-          </div>
-        );
+        return <Medications />;
       case "warehouse":
-        return (
-          <div className="text-center py-12">
-            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Almacén Central en desarrollo</p>
-          </div>
-        );
+        return <Warehouse />;
       case "reports":
-        return (
-          <div className="text-center py-12">
-            <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Módulo de Reportes en desarrollo</p>
-          </div>
-        );
+        if (!selectedMode || selectedMode.itemId !== "reports") {
+          return (
+            <div className="text-center py-12">
+              <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">Selecciona un tipo de reporte</p>
+              <p className="text-gray-400 text-sm mt-2">Usa el menú lateral para elegir el reporte que deseas ver</p>
+            </div>
+          );
+        }
+        break;
       default:
         return (
           <>
@@ -313,6 +609,213 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Pacientes */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Pacientes Registrados</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.patients}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center">
+                    <Users size={24} className="text-cyan-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Departamentos */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Departamentos Disponibles</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.departments}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Building2 size={24} className="text-purple-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Medicamentos */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Medicamentos Accesibles</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.medications}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <Pill size={24} className="text-green-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Doctores */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Doctores Activos</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.doctors}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Stethoscope size={24} className="text-blue-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Enfermeros */}
+              <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">Enfermeros Activos</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">
+                      {loadingStats ? "..." : dashboardStats.nurses}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center">
+                    <Activity size={24} className="text-pink-600" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tarjetas de Hoy */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              {/* Consultas por Remisión Hoy */}
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-xl shadow-md text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-100 font-medium">Consultas por Remisión Hoy</p>
+                    <p className="text-3xl font-bold mt-1">
+                      {loadingTodayStats ? "..." : todayStats.consultationsReferral}
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Calendar size={28} className="text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Consultas por Derivación Hoy */}
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-5 rounded-xl shadow-md text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-indigo-100 font-medium">Consultas por Derivación Hoy</p>
+                    <p className="text-3xl font-bold mt-1">
+                      {loadingTodayStats ? "..." : todayStats.consultationsDerivation}
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Calendar size={28} className="text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Emergencias Hoy */}
+              <div className="bg-gradient-to-br from-red-500 to-red-600 p-5 rounded-xl shadow-md text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-red-100 font-medium">Atenciones de Emergencia Hoy</p>
+                    <p className="text-3xl font-bold mt-1">
+                      {loadingTodayStats ? "..." : todayStats.emergencies}
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <AlertCircle size={28} className="text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              {/* Gráfico de Consultas por Departamento */}
+              <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">Consultas por Departamento</h3>
+                {loadingCharts ? (
+                  <div className="h-64 flex items-center justify-center text-slate-400">Cargando...</div>
+                ) : consultationsByDept.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={consultationsByDept} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={-15} textAnchor="end" height={60} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                      />
+                      <Legend />
+                      <Bar dataKey="remisiones" name="Remisiones" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="derivaciones" name="Derivaciones" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-slate-400">
+                    No hay datos de consultas disponibles
+                  </div>
+                )}
+              </div>
+
+              {/* Gráfico de Tendencia de Atenciones */}
+              <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">Tendencia de Atenciones (Últimos 7 días)</h3>
+                {loadingCharts ? (
+                  <div className="h-64 flex items-center justify-center text-slate-400">Cargando...</div>
+                ) : attendanceTrend.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={attendanceTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="remisiones" 
+                        name="Remisiones"
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        dot={{ fill: '#3b82f6', r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="derivaciones" 
+                        name="Derivaciones"
+                        stroke="#8b5cf6" 
+                        strokeWidth={2}
+                        dot={{ fill: '#8b5cf6', r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="total" 
+                        name="Total"
+                        stroke="#10b981" 
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={{ fill: '#10b981', r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-slate-400">
+                    No hay datos de tendencia disponibles
+                  </div>
+                )}
+              </div>
+            </div>
           </>
         );
     }
@@ -324,9 +827,9 @@ const Dashboard = () => {
       <aside
         className={`fixed left-0 top-0 h-full ${
           sidebarOpen ? "w-72" : "w-20"
-        } bg-white/80 backdrop-blur-xl border-r border-slate-200/50 transition-all duration-300 z-30 shadow-xl`}
+        } bg-white/80 backdrop-blur-xl border-r border-slate-200/50 transition-all duration-300 z-30 shadow-xl flex flex-col`}
       >
-        <div className="p-6 border-b border-slate-200/50">
+        <div className="p-6 border-b border-slate-200/50 flex-shrink-0">
           <div className="flex items-center justify-between">
             {sidebarOpen && (
               <div>
@@ -350,7 +853,12 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <nav className="p-4 space-y-1 sidebar-nav">
+        <nav className="p-4 space-y-1 sidebar-nav flex-1 overflow-y-auto"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#cbd5e1 transparent'
+          }}
+        >
           {modules.map((module) => {
             const Icon = module.icon;
             const isActive = activeModule === module.id;
@@ -358,7 +866,7 @@ const Dashboard = () => {
             const isSubmenuOpen = activeItem === module.id;
 
             return (
-              <div key={module.id} className="relative">
+              <div key={module.id} className="relative group">
                 <button
                   onClick={() => handleItemClick(module.id)}
                   className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${
@@ -381,7 +889,7 @@ const Dashboard = () => {
                   )}
                 </button>
 
-                {/* Submenú inline para todos los módulos con submenú */}
+                {/* Submenú inline */}
                 {sidebarOpen && hasSubmenu && isSubmenuOpen && (
                   <div
                     className="mt-2 pl-10 pr-4 space-y-1"
@@ -408,6 +916,26 @@ const Dashboard = () => {
             );
           })}
         </nav>
+        
+        {/* Estilos CSS para scrollbar personalizado */}
+        <style jsx>{`
+          .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+          }
+          
+          .sidebar-nav::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          
+          .sidebar-nav::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+          }
+          
+          .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+          }
+        `}</style>
       </aside>
 
       {/* Main Content */}
@@ -473,9 +1001,10 @@ const Dashboard = () => {
 
 export default Dashboard;
 export const roleTranslations = {
-  Patient: "Paciente",
+  Paciente: "Paciente",
   Doctor: "Doctor",
-  Nurse: "Enfermero/a",
-  MedicalStaff: "Personal Médico",
-  Admin: "Administrador",
+  "Enfermero/a": "Enfermero/a",
+  "Jefe de Almacén": "Jefe de Almacén",
+  Admin: "Admin",
+  "Jefe de Departamento": "Jefe de Departamento",
 };

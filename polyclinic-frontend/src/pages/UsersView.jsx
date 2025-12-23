@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Building2, Edit, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2,
+  Building2, Edit, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, Download,
 } from 'lucide-react';
 import { userService } from '../services/userService';
+import { ProtectedComponent, usePermissions } from '../middleware/PermissionMiddleware';
+import Pagination from '../components/Pagination';
 
 const Users = () => {
+  const { can } = usePermissions();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +18,10 @@ const Users = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     loadUsers();
@@ -114,11 +121,57 @@ const Users = () => {
     }
   };
 
+  const handleExportUsers = async () => {
+    if (!can('canExportUsers')) {
+      setError('No tienes permisos para exportar usuarios');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const url = await userService.exportToPdf();
+      
+      // Crear un enlace temporal y hacer clic
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `usuarios_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Limpiar la URL cuando ya no se necesite
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Usuarios exportados exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      const errorMessage = err.message || 'Error al exportar usuarios';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredUsers = users.filter((usr) =>
     (usr.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (usr.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (usr.phoneNumber?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+  
+  // Resetear a página 1 cuando cambie searchTerm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+  
+  // Calcular items para la página actual
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+  
+  // Calcular total de páginas
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -141,6 +194,17 @@ const Users = () => {
             Gestiona los usuarios del policlínico
           </p>
         </div>
+
+        <ProtectedComponent requiredPermission="canExportUsers">
+          <button
+            onClick={handleExportUsers}
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-lg"
+            disabled={loading}
+          >
+            <Download className="w-5 h-5" />
+            Exportar PDF
+          </button>
+        </ProtectedComponent>
       </div>
 
       {/* Search Bar */}
@@ -178,7 +242,7 @@ const Users = () => {
 
       {/* Users Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredUsers.map((_user) => (
+        {paginatedUsers.map((_user) => (
           <div
             key={_user.id}
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 border border-gray-200"
@@ -233,6 +297,17 @@ const Users = () => {
           </div>
         ))}
       </div>
+      
+      {/* Paginación */}
+      {filteredUsers.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredUsers.length}
+        />
+      )}
 
       {filteredUsers.length === 0 && (
         <div className="text-center py-12">
